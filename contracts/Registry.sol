@@ -48,6 +48,7 @@ contract BeranamesRegistry is
         IAddressesProvider addressesProvider_
     ) ERC721("Beranames", unicode"🐻🪪") {
         addressesProvider = addressesProvider_;
+        _pause();
     }
 
     function totalSupply() public view override returns (uint256) {
