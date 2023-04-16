@@ -3,8 +3,9 @@ pragma solidity ^0.8.17;
 pragma abicoder v2;
 
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
+import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";
 
-contract AddressesProvider is Ownable2Step {
+contract AddressesProvider is Ownable2Step, Multicall {
     address public REGISTRY;
     address public PRICE_ORACLE;
     address public FUNDS_MANAGER;

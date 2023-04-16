@@ -14,7 +14,7 @@ error Nope();
 
 /**
  */
-contract BeranamesActionHouse is Ownable2Step, Pausable {
+contract AuctionHouse is Ownable2Step, Pausable {
     struct Bid {
         address bidder;
         uint256 amount;

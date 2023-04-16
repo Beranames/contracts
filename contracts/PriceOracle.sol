@@ -97,4 +97,8 @@ contract PriceOracle is Ownable2Step {
         // console.logUint(assetPrice);
         return 1e18;
     }
+
+    function setAssetOracle(address asset, address oracle) external onlyOwner {
+        priceFeeds[asset] = oracle;
+    }
 }

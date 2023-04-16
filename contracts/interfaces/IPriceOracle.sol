@@ -21,4 +21,6 @@ interface IPriceOracle {
 
     // ADMIN ONLY
     function setEmojis(string[] calldata emojis) external;
+
+    function setAssetOracle(address asset, address oracle) external;
 }

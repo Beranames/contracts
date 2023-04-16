@@ -1,78 +1,74 @@
 import { ethers } from "hardhat";
-import { BeranamesRegistry, PriceOracle } from "../typechain-types";
+import { constants } from "ethers";
 import getEmojiBatch from "./emojis/getBatchEmojis";
+import { AddressesProvider, AuctionHouse, BeranamesRegistry, FundsManager, PriceOracle } from "../typechain-types";
 
-async function main() {
+const deployAddressesProvider = async (): Promise<AddressesProvider> => {
+    const addressesProviderFactory = await ethers.getContractFactory("AddressesProvider");
+    const addressesProvider = await addressesProviderFactory.deploy(
+        constants.AddressZero, // registry
+        constants.AddressZero, // priceOracle
+        constants.AddressZero, // fundsManager
+        constants.AddressZero, // auctionHouse
+        constants.AddressZero, // validator
+        constants.AddressZero, // team
+        constants.AddressZero // foundation
+    );
+    await addressesProvider.deployed();
+    console.log(`AddressesProvider deployed at: ${(addressesProvider as unknown as { address: string }).address}`);
+    return addressesProvider;
+};
+
+const deployPriceOracle = async (): Promise<PriceOracle> => {
     const price = await ethers.getContractFactory("PriceOracle");
-    const priceOracle: ethers.Contract<PriceOracle> = await price.deploy();
+    const priceOracle = await price.deploy();
     await priceOracle.deployed();
-    console.log("priceOracle deployed to:", priceOracle.address);
+    console.log("PriceOracle deployed to:", (priceOracle as unknown as { address: string }).address);
     const emojiGenerator = getEmojiBatch();
     while (true) {
         const batch = emojiGenerator.next();
-        if (!batch.done) {
-            await priceOracle.setEmojis(batch.value);
-        } else {
-            console.log("done");
-            break;
-        }
+        if (batch.done) break;
+        await priceOracle.setEmojis(batch.value);
     }
-    // const fundsMangerFactory = await ethers.getContractFactory("FundsManager");
-    // const fundsManager: ethers.Contract<FundsManager> = await fundsMangerFactory.deploy();
-    const registryFactory = await ethers.getContractFactory("BeranamesRegistry");
-    const registry: ethers.Contract<BeranamesRegistry> = await registryFactory.deploy(
-        priceOracle.address,
-        ethers.constants.AddressZero
-    );
-    await registry.deployed();
-    console.log("registry deployed to:", registry.address);
+    return priceOracle;
+};
 
-    const isEmoji = await registry.isSingleEmoji("🐻");
-    console.log("isSingleEmoji: 🐻", isEmoji);
-    const isEmoji2 = await registry.isSingleEmoji("⛓️");
-    console.log("isSingleEmoji: ⛓️", isEmoji2);
-    // await Promise.all(
-    //     emojisTest.map(async (seq) => {
-    //         const voucherData1: BeranamesRegistry.MintVoucherStruct = {
-    //             name: seq,
-    //             duration: 365 * 24 * 3600,
-    //             whois: registry.address,
-    //             metadataURI: "https://s3.jksdfnkjsdnfkjsdfn.com",
-    //             to: deployer.address,
-    //             paymentAsset: ethers.constants.AddressZero,
-    //             paymentAmount: ethers.constants.WeiPerEther,
-    //         };
-    //         const signedVoucher1 = await signMintVoucher(voucherData1, registry.address);
-    //         const tx = await registry.mintWithTicket(voucherData1, signedVoucher1);
-    //         await tx.wait();
-    //     })
-    // );
-    // const voucherData1: BeranamesRegistry.MintVoucherStruct = {
-    //     name: "🐻‍❄️👨‍👨‍👧‍👧",
-    //     duration: 365 * 24 * 3600,
-    //     whois: registry.address,
-    //     metadataURI: "https://s3.jksdfnkjsdnfkjsdfn.com",
-    //     to: deployer.address,
-    //     paymentAsset: ethers.constants.AddressZero,
-    //     paymentAmount: ethers.constants.WeiPerEther,
-    // };
-    // const signedVoucher1 = await signMintVoucher(voucherData1, registry.address);
-    // // console.log("signedVoucher:", signedVoucher);
-    // const tx = await registry.mint(voucherData1, signedVoucher1);
-    // await tx.wait();
-    // const voucherData2: BeranamesRegistry.MintVoucherStruct = {
-    //     name: "🐻🪪 henlo",
-    //     duration: 365 * 24 * 3600,
-    //     whois: registry.address,
-    //     metadataURI: "https://s3.jksdfnkjsdnfkjsdfn.com",
-    //     to: deployer.address,
-    //     paymentAsset: ethers.constants.AddressZero,
-    //     paymentAmount: ethers.constants.WeiPerEther,
-    // };
-    // const signedVoucher2 = await signMintVoucher(voucherData2, registry.address);
-    // // console.log("signedVoucher:", signedVoucher);
-    // const tx2 = await registry.mint(voucherData2, signedVoucher2);
-    // await tx2.wait();
+const deployAuctionhouse = async (addressesProviderAddress: string): Promise<AuctionHouse> => {
+    const auctionhouseFactory = await ethers.getContractFactory("AuctionHouse");
+    const auctionhouse = await auctionhouseFactory.deploy(addressesProviderAddress);
+    await auctionhouse.deployed();
+    console.log("AuctionHouse deployed to:", (auctionhouse as unknown as { address: string }).address);
+    return auctionhouse;
+};
+
+const deployFundsManager = async (addressesProvider: string): Promise<FundsManager> => {
+    const fundsMangerFactory = await ethers.getContractFactory("FundsManager");
+    const fundsManager = await fundsMangerFactory.deploy(addressesProvider);
+    await fundsManager.deployed();
+    console.log("FundsManager deployed to:", (fundsManager as unknown as { address: string }).address);
+    return fundsManager;
+};
+
+const deployRegistry = async (addressesProvider: string): Promise<BeranamesRegistry> => {
+    const registryFactory = await ethers.getContractFactory("BeranamesRegistry");
+    const registry = await registryFactory.deploy(addressesProvider);
+    await registry.deployed();
+    console.log("Registry deployed to:", (registry as unknown as { address: string }).address);
+    return registry;
+};
+
+async function main() {
+    const addressesProvider = await deployAddressesProvider();
+    const price = await deployPriceOracle();
+    const auctionHouse = await deployAuctionhouse(addressesProvider.address);
+    const fundsManager = await deployFundsManager(addressesProvider.address);
+    const registry = await deployRegistry(addressesProvider.address);
+    const setAddresses = await addressesProvider.multicall([
+        addressesProvider.interface.encodeFunctionData("setPriceOracle", [price.address]),
+        addressesProvider.interface.encodeFunctionData("setAuctionHouse", [auctionHouse.address]),
+        addressesProvider.interface.encodeFunctionData("setFundsManager", [fundsManager.address]),
+        addressesProvider.interface.encodeFunctionData("setRegistry", [registry.address]),
+    ]);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
