@@ -89,6 +89,7 @@ contract AuctionHouse is Ownable2Step, Pausable {
     function claim(uint256 id) external {
         Auction memory auction = auctions[id];
         if (auction.highestBid.bidder != _msgSender()) revert Nope();
+        if (auction.end >= block.timestamp) revert Nope();
         registry().transferFrom(address(this), auction.highestBid.bidder, id);
         payable(addressesProvider.FUNDS_MANAGER()).transfer(
             auction.highestBid.amount
