@@ -1,8 +1,6 @@
-import { time, loadFixture } from "@nomicfoundation/hardhat-network-helpers";
-import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
+import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
-import { ethers } from "hardhat";
-import { constants } from "ethers";
+
 import deployAddressesProviderFixture from "./utils/deployAddressesProvider";
 
 describe("AddressesProvider", function () {
@@ -21,7 +19,6 @@ describe("AddressesProvider", function () {
 
         it("Should set the right owner", async function () {
             const { provider, owner } = await loadFixture(deployAddressesProviderFixture);
-
             expect(await provider.owner()).to.equal(owner.address);
         });
     });
