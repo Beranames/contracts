@@ -69,6 +69,7 @@ async function main() {
         addressesProvider.interface.encodeFunctionData("setFundsManager", [fundsManager.address]),
         addressesProvider.interface.encodeFunctionData("setRegistry", [registry.address]),
     ]);
+    // await registry.mintToAuctionHouse([["👍"]]);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

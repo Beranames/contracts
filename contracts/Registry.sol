@@ -168,15 +168,15 @@ contract BeranamesRegistry is
     ) internal returns (uint id) {
         if (duration < 1) revert LeaseTooShort();
         bytes32 name = keccak256(abi.encode(chars));
-        if (
-            minted[name] &&
-            names[nameIds[name]].expiry > block.timestamp - GRACE_PERIOD
-        ) {
-            revert Exists();
+        if (minted[name]) {
+            if (names[nameIds[name]].expiry > block.timestamp - GRACE_PERIOD) {
+                revert Exists();
+            } else {
+                _burn(nameIds[name]);
+            }
         } else {
-            _burn(nameIds[name]);
+            minted[name] = true;
         }
-        minted[name] = true;
         id = _id;
         _id++;
         names[id] = Name({
