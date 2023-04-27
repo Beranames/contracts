@@ -87,7 +87,7 @@ contract BeranamesRegistry is
         address whois,
         string calldata metadataURI,
         address to
-    ) external payable returns (uint) {
+    ) external payable whenNotPaused returns (uint) {
         uint price = priceOracle().price(chars, duration, address(0));
         payable(addressesProvider.FUNDS_MANAGER()).transfer(price);
         return mintInternal(chars, duration, whois, metadataURI, to);
@@ -100,7 +100,7 @@ contract BeranamesRegistry is
         string calldata metadataURI,
         address to,
         IERC20 paymentAsset
-    ) external returns (uint) {
+    ) external whenNotPaused returns (uint) {
         uint price = priceOracle().price(
             chars,
             duration,
@@ -153,6 +153,11 @@ contract BeranamesRegistry is
         }
     }
 
+    /** ADMIN */
+    function togglePause() external onlyOwner {
+        paused() ? _unpause() : _pause();
+    }
+
     /** INTERNAL */
     function mintInternal(
         string[] memory chars, // ["🐻", "🪪"] || ["o", "o", "g", "a", "b", "o", "o", "g", "a"]
@@ -160,7 +165,7 @@ contract BeranamesRegistry is
         address whois,
         string memory metadataURI,
         address to
-    ) internal whenNotPaused returns (uint id) {
+    ) internal returns (uint id) {
         if (duration < 1) revert LeaseTooShort();
         bytes32 name = keccak256(abi.encode(chars));
         if (
