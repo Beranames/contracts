@@ -59,7 +59,12 @@ contract AuctionHouse is Ownable2Step, Pausable {
         if (registry().ownerOf(tokenId) != address(this)) {
             revert Nope();
         }
-        if (auctions[tokenId].end <= block.timestamp) {
+        // Check input end value to be later than "now"
+        if (end <= block.timestamp) {
+            revert Nope();
+        }
+        // Check if auction with current tokenId already existsx
+        if (auctions[tokenId].end != 0) {
             revert Nope();
         }
         auctions[tokenId] = Auction({
