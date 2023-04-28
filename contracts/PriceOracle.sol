@@ -28,10 +28,12 @@ contract PriceOracle is Ownable2Step {
         string[] calldata chars
     ) public view returns (uint256 emojis) {
         for (uint256 i = 0; i < chars.length; i++) {
-            if (bytes(chars[i]).length > 1 && isEmoji[bytes(chars[i])]) {
-                emojis++;
-            } else {
-                revert Nope();
+            if (bytes(chars[i]).length > 1) {
+                if (isEmoji[bytes(chars[i])]) {
+                    emojis++;
+                } else {
+                    revert Nope();
+                }
             }
         }
     }
