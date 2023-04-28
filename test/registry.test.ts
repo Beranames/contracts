@@ -7,6 +7,7 @@ import deployPriceOracleFixture from "./utils/deployPriceOracle";
 import deployRegistryFixture from "./utils/deployRegistry";
 import deployAuctionHouseFixture from "./utils/deployAuctionHouse";
 import { parseEther } from "ethers/lib/utils";
+import { network } from "hardhat";
 
 describe("BeranamesRegistry", function () {
     async function setupFixture() {
@@ -104,6 +105,65 @@ describe("BeranamesRegistry", function () {
             it("Should allow to mint if price is paid", async function () {
                 const { registry, owner } = await loadFixture(setupFixture);
                 await registry.togglePause();
+                await expect(
+                    registry.mintNative(["o", "o", "g", "a"], 1, owner.address, "https://example.com", owner.address, {
+                        value: parseEther("80"),
+                    })
+                ).to.not.be.reverted;
+            });
+            it("Should not-allow to mint if exists", async function () {
+                const { registry, owner } = await loadFixture(setupFixture);
+                await registry.togglePause();
+                await registry.mintNative(
+                    ["o", "o", "g", "a"],
+                    1,
+                    owner.address,
+                    "https://example.com",
+                    owner.address,
+                    {
+                        value: parseEther("80"),
+                    }
+                );
+                await expect(
+                    registry.mintNative(["o", "o", "g", "a"], 1, owner.address, "https://example.com", owner.address, {
+                        value: parseEther("80"),
+                    })
+                ).to.be.revertedWithCustomError(registry, "Exists");
+            });
+            it("Should not allow to mint if within GRACE_PERIOD", async function () {
+                const { registry, owner } = await loadFixture(setupFixture);
+                await registry.togglePause();
+                await registry.mintNative(
+                    ["o", "o", "g", "a"],
+                    1,
+                    owner.address,
+                    "https://example.com",
+                    owner.address,
+                    {
+                        value: parseEther("80"),
+                    }
+                );
+                await network.provider.send("evm_increaseTime", [86400 * (365 + 29)]);
+                await expect(
+                    registry.mintNative(["o", "o", "g", "a"], 1, owner.address, "https://example.com", owner.address, {
+                        value: parseEther("80"),
+                    })
+                ).to.be.revertedWithCustomError(registry, "Exists");
+            });
+            it("Should allow to mint if beyond expiry + GRACE_PERIOD", async function () {
+                const { registry, owner } = await loadFixture(setupFixture);
+                await registry.togglePause();
+                await registry.mintNative(
+                    ["o", "o", "g", "a"],
+                    1,
+                    owner.address,
+                    "https://example.com",
+                    owner.address,
+                    {
+                        value: parseEther("80"),
+                    }
+                );
+                await network.provider.send("evm_increaseTime", [86400 * (365 + 30)]);
                 await expect(
                     registry.mintNative(["o", "o", "g", "a"], 1, owner.address, "https://example.com", owner.address, {
                         value: parseEther("80"),
