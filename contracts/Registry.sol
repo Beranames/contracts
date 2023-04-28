@@ -15,12 +15,6 @@ import {IPriceOracle} from "./interfaces/IPriceOracle.sol";
 
 import {console} from "hardhat/console.sol";
 
-error NoEntity();
-error LeaseTooShort();
-error InsufficientBalance();
-error Exists();
-error Nope();
-
 contract BeranamesRegistry is
     Ownable2Step,
     Pausable,
@@ -28,6 +22,11 @@ contract BeranamesRegistry is
     Multicall
 {
     using SafeERC20 for IERC20;
+    error NoEntity();
+    error LeaseTooShort();
+    error InsufficientBalance();
+    error Exists();
+    error Nope();
 
     struct Name {
         bytes32 name;
@@ -68,7 +67,7 @@ contract BeranamesRegistry is
     }
 
     function mintToAuctionHouse(
-        string[][] calldata singleEmojis // [["😀",["😁"],["😂"], ["🤣"], ...]
+        string[][] calldata singleEmojis // [["😀"],["😁"],["😂"], ["🤣"], ...]
     ) external onlyOwner {
         for (uint i = 0; i < singleEmojis.length; i++) {
             mintInternal(

@@ -7,9 +7,8 @@ import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/Ag
 
 import "hardhat/console.sol";
 
-error Nope();
-
 contract PriceOracle is Ownable2Step {
+    error Nope();
     mapping(bytes => bool) public isEmoji;
     mapping(address => address) public priceFeeds; // asset => priceFeed
 
@@ -28,10 +27,12 @@ contract PriceOracle is Ownable2Step {
         string[] calldata chars
     ) public view returns (uint256 emojis) {
         for (uint256 i = 0; i < chars.length; i++) {
-            if (bytes(chars[i]).length > 1 && isEmoji[bytes(chars[i])]) {
-                emojis++;
-            } else {
-                revert Nope();
+            if (bytes(chars[i]).length > 1) {
+                if (isEmoji[bytes(chars[i])]) {
+                    emojis++;
+                } else {
+                    revert Nope();
+                }
             }
         }
     }
@@ -57,9 +58,9 @@ contract PriceOracle is Ownable2Step {
             revert Nope();
         }
         if (chars.length == emojis) {
-            amount = (amount * 69) / 100;
+            amount += (amount * 69) / 100;
         } else if (emojis > 0) {
-            amount = (amount * 25) / 100;
+            amount += (amount * 25) / 100;
         }
     }
 

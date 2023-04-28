@@ -6,7 +6,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {IAddressesProvider} from "./interfaces/IAddressesProvider.sol";
 import {IStakingModule} from "./interfaces/IStaking.sol";
-
+import "hardhat/console.sol";
 // Errors
 error ZeroAddress();
 error ZeroAmount();
@@ -43,10 +43,12 @@ contract FundsManager is Ownable2Step {
     }
 
     receive() external payable {
-        (uint toTeam, uint toFoundation) = _split(msg.value);
-        payable(addressesProvider.TEAM_WALLET()).transfer(toTeam);
-        payable(addressesProvider.FOUNDATION_WALLET()).transfer(toFoundation);
-        _delegate(msg.value - toTeam - toFoundation);
+        console.log("received %s", msg.value);
+        // TODO - sort this
+        // (uint toTeam, uint toFoundation) = _split(msg.value);
+        // payable(addressesProvider.TEAM_WALLET()).transfer(toTeam);
+        // payable(addressesProvider.FOUNDATION_WALLET()).transfer(toFoundation);
+        // _delegate(msg.value - toTeam - toFoundation);
     }
 
     /**
