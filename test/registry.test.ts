@@ -89,7 +89,10 @@ describe("BeranamesRegistry", function () {
                 const { registry, owner } = await loadFixture(setupFixture);
                 await registry.togglePause();
                 await expect(
-                    registry.mintNative(["oo", "o", "g", "a"], 1, owner.address, "https://example.com", owner.address)
+                    registry.mintNative(["oo", "g", "a"], 1, owner.address, "https://example.com", owner.address)
+                ).to.be.revertedWithCustomError(registry, "Nope");
+                await expect(
+                    registry.mintNative(["ooga"], 1, owner.address, "https://example.com", owner.address)
                 ).to.be.revertedWithCustomError(registry, "Nope");
             });
 
@@ -169,6 +172,25 @@ describe("BeranamesRegistry", function () {
                         value: parseEther("80"),
                     })
                 ).to.not.be.reverted;
+            });
+        });
+
+        describe("renewNative", function () {
+            it("should allow to renew", async function () {
+                const { registry, owner } = await loadFixture(setupFixture);
+                await registry.togglePause();
+                await registry.mintNative(
+                    ["o", "o", "g", "a"],
+                    1,
+                    owner.address,
+                    "https://example.com",
+                    owner.address,
+                    {
+                        value: parseEther("80"),
+                    }
+                );
+                await expect(registry.renewNative(["o", "o", "g", "a"], 1, { value: parseEther("80") })).to.not.be
+                    .reverted;
             });
         });
     });
