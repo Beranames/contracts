@@ -57,9 +57,9 @@ contract AuctionHouse is Ownable2Step, Pausable, ERC721Holder {
         uint256 end,
         uint256 startPrice
     ) external onlyOwner {
-        if (registry().ownerOf(tokenId) != address(this)) {
-            revert Nope();
-        }
+        // if (registry().ownerOf(tokenId) != address(this)) {
+        //     revert Nope();
+        // }
         // Check input end value to be later than "now"
         if (end <= block.timestamp) {
             revert Nope();
@@ -82,6 +82,7 @@ contract AuctionHouse is Ownable2Step, Pausable, ERC721Holder {
         Auction memory auction = auctions[id];
         if (auction.start >= block.timestamp) revert Nope();
         if (auction.end <= block.timestamp) revert Nope();
+        if (amount < auction.startPrice) revert Nope();
         if (auction.highestBid.amount >= amount) revert Nope();
         Bid memory currentBid = auction.highestBid;
         if (currentBid.bidder != address(0)) {
