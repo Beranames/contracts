@@ -2,9 +2,11 @@ import { ethers } from "hardhat";
 
 const globalProvider = null;
 
-async function deployAddressesProviderFixture() {
+async function deployAddressesProviderFixture(
+    registry?: string,
+) {
     const addresses = {
-        registry: "0x0000000000000000000000000000000000000001",
+        registry: registry ?? "0x0000000000000000000000000000000000000001",
         oracle: "0x0000000000000000000000000000000000000002",
         fundsManager: "0x0000000000000000000000000000000000000003",
         auctionHouse: "0x0000000000000000000000000000000000000004",

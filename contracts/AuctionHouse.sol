@@ -11,7 +11,7 @@ import {Pausable} from "@openzeppelin/contracts/security/Pausable.sol";
 import {IAddressesProvider} from "./interfaces/IAddressesProvider.sol";
 import {IFundsManager} from "./interfaces/IFundsManager.sol";
 
-error Nope();
+error Nope(string desc);
 
 /**
  */
@@ -57,16 +57,16 @@ contract AuctionHouse is Ownable2Step, Pausable, ERC721Holder {
         uint256 end,
         uint256 startPrice
     ) external onlyOwner {
-        // if (registry().ownerOf(tokenId) != address(this)) {
-        //     revert Nope();
-        // }
+        if (registry().ownerOf(tokenId) != address(this)) {
+            revert Nope("createAuction: auctionHouse is not an owner of token");
+        }
         // Check input end value to be later than "now"
         if (end <= block.timestamp) {
-            revert Nope();
+            revert Nope('createAuction: end <= block.timestamp');
         }
         // Check if auction with current tokenId already existsx
         if (auctions[tokenId].end != 0) {
-            revert Nope();
+            revert Nope('createAuction: auctions[tokenId].end != 0');
         }
         auctions[tokenId] = Auction({
             start: start,
@@ -80,10 +80,10 @@ contract AuctionHouse is Ownable2Step, Pausable, ERC721Holder {
     function placeBid(uint256 id) external payable {
         uint amount = msg.value;
         Auction memory auction = auctions[id];
-        if (auction.start >= block.timestamp) revert Nope();
-        if (auction.end <= block.timestamp) revert Nope();
-        if (amount < auction.startPrice) revert Nope();
-        if (auction.highestBid.amount >= amount) revert Nope();
+        if (auction.start >= block.timestamp) revert Nope('placeBid: start >= block.timestamp');
+        if (auction.end <= block.timestamp) revert Nope('placeBid: end <= block.timestamp');
+        if (amount < auction.startPrice) revert Nope('placeBid: amount < auction.startPrice');
+        if (auction.highestBid.amount >= amount) revert Nope('placeBid: highestBid >= amount');
         Bid memory currentBid = auction.highestBid;
         if (currentBid.bidder != address(0)) {
             payable(currentBid.bidder).transfer(currentBid.amount);
@@ -95,8 +95,8 @@ contract AuctionHouse is Ownable2Step, Pausable, ERC721Holder {
 
     function claim(uint256 id) external {
         Auction memory auction = auctions[id];
-        if (auction.highestBid.bidder != _msgSender()) revert Nope();
-        if (auction.end >= block.timestamp) revert Nope();
+        if (auction.highestBid.bidder != _msgSender()) revert Nope('not highest bidder');
+        if (auction.end >= block.timestamp) revert Nope("auction hasn't been done yet");
         registry().transferFrom(address(this), auction.highestBid.bidder, id);
         payable(addressesProvider.FUNDS_MANAGER()).transfer(
             auction.highestBid.amount
@@ -106,9 +106,9 @@ contract AuctionHouse is Ownable2Step, Pausable, ERC721Holder {
 
     function transferUnclaimed(uint256 id) external onlyOwner {
         Auction memory auction = auctions[id];
-        if (auction.start >= block.timestamp) revert Nope();
-        if (auction.end <= block.timestamp) revert Nope();
-        if (auction.highestBid.bidder != address(0)) revert Nope();
+        if (auction.start >= block.timestamp) revert Nope('');
+        if (auction.end <= block.timestamp) revert Nope('');
+        if (auction.highestBid.bidder != address(0)) revert Nope('');
         registry().transferFrom(address(this), _msgSender(), id);
     }
 }

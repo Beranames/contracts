@@ -1,8 +1,10 @@
 import { ethers } from "hardhat";
 import deployAddressesProviderFixture from "./deployAddressesProvider";
 
-async function deployAuctionHouseFixture() {
-    const { provider } = await deployAddressesProviderFixture();
+async function deployAuctionHouseFixture(
+    registry?: string,
+) {
+    const { provider } = await deployAddressesProviderFixture(registry);
     const [owner, otherAccount] = await ethers.getSigners();
     const factory = await ethers.getContractFactory("AuctionHouse");
     const auctionHouse = await factory.deploy(provider.address);

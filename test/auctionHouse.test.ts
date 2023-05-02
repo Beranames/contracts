@@ -20,7 +20,7 @@ describe("AuctionHouse", function () {
         const { registry } = await loadFixture(deployRegistryFixture);
         _registry = registry;
 
-        const { provider, auctionHouse, owner, otherAccount } = await loadFixture(deployAuctionHouseFixture);
+        const { provider, auctionHouse, owner, otherAccount } = await deployAuctionHouseFixture(registry.address);
         _provider = provider;
         _auctionHouse = auctionHouse;
         _owner = owner;
@@ -84,11 +84,10 @@ describe("AuctionHouse", function () {
                 expect((await _auctionHouse.auctions(0)).end).to.eq(9999999999);
                 expect((await _auctionHouse.auctions(0)).startPrice).to.eq(0);
             });
-            it("Should revert if input data is incorrect", async function() {
+            it("Should revert if input data is incorrect", async function () {
                 await expect(createAuction(0, 0, 1000, 0)).to.be.revertedWithCustomError(_auctionHouse, "Nope");
 
                 await createAuction(0, 0, await getTimestamp() + 10, 0);
-                console.log(await _auctionHouse.auctions(0));
                 await expect(createAuction(0, 0, await getTimestamp() + 10, 0)).to.be.revertedWithCustomError(_auctionHouse, "Nope");
             });
         });
@@ -134,6 +133,39 @@ describe("AuctionHouse", function () {
                 await expect(_auctionHouse.placeBid(tokenId, { value: 100 }))
                     .to.emit(_auctionHouse, "BidPlaced")
                     .withArgs(tokenId, _owner.address, 100);
+            });
+        });
+        describe("claim", function () {
+            describe("Validations", function () {
+                it("Should revert if caller is not a highest bidder", async function () {
+                    await createAuction();
+                    await _auctionHouse.placeBid(0, { value: 100 });
+
+                    await expect(_auctionHouse.connect(acc1).claim(0))
+                        .to.be.revertedWithCustomError(_auctionHouse, "Nope");
+                });
+                it("Should revert if auction hasn't already finished", async function () {
+                    await createAuction();
+
+                    await expect(_auctionHouse.claim(0))
+                        .to.be.revertedWithCustomError(_auctionHouse, "Nope");
+                });
+            });
+            it("Should transfer token to highest bidder", async function () {
+                const ts = await getTimestamp();
+                await createAuction(
+                    undefined,
+                    undefined,
+                    ts + 10,
+                    undefined
+                );
+                await time.setNextBlockTimestamp(ts + 5);
+                await _auctionHouse.placeBid(0, { value: 100 });
+                await time.setNextBlockTimestamp(ts + 11);
+
+                await expect(_auctionHouse.claim(0))
+                    .to.emit(_auctionHouse, "Claimed")
+                    .withArgs(0, _owner.address);
             });
         });
     });
