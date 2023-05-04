@@ -38,8 +38,8 @@ contract BeranamesRegistry is
     uint256 constant GRACE_PERIOD = 30 days;
     IAddressesProvider public addressesProvider;
 
-    uint private _id;
-    mapping(bytes32 => uint256) public nameIds;
+    uint private _count;
+    // mapping(bytes32 => uint256) public nameIds;
     mapping(uint256 => Name) public names; // keccak256(abi.encode(🐻⛓️)) => Name
     mapping(bytes32 => bool) public minted; // keccak256(abi.encode(🐻⛓️)) => true
 
@@ -51,7 +51,7 @@ contract BeranamesRegistry is
     }
 
     function totalSupply() public view override returns (uint256) {
-        return _id;
+        return _count;
     }
 
     function tokenURI(uint256 id) public view override returns (string memory) {
@@ -115,9 +115,25 @@ contract BeranamesRegistry is
         string[] calldata chars,
         uint duration
     ) external payable {
-        uint price = priceOracle().price(chars, duration, address(0));
-        payable(addressesProvider.FUNDS_MANAGER()).transfer(price);
-        renewInternal(chars, duration);
+        bytes32 id = keccak256(abi.encode(chars));
+        if (!minted[id]) revert Nope();
+        uint expiry = names[uint(id)].expiry;
+        if (expiry + GRACE_PERIOD < block.timestamp) {
+            uint remainder;
+            if (expiry < block.timestamp) {
+                remainder = (expiry - block.timestamp) / 365 days;
+            }
+            uint price = priceOracle().price(
+                chars,
+                duration + remainder,
+                address(0)
+            ) - priceOracle().price(chars, remainder, address(0));
+            console.log(price);
+            payable(addressesProvider.FUNDS_MANAGER()).transfer(price);
+            renewInternal(chars, duration);
+        } else {
+            revert Nope();
+        }
     }
 
     function renewERC20(
@@ -168,17 +184,15 @@ contract BeranamesRegistry is
         if (duration < 1) revert LeaseTooShort();
         bytes32 name = keccak256(abi.encode(chars));
         if (minted[name]) {
-            if (names[nameIds[name]].expiry > block.timestamp - GRACE_PERIOD) {
+            if (names[uint(name)].expiry > block.timestamp - GRACE_PERIOD) {
                 revert Exists();
             } else {
-                _burn(nameIds[name]);
+                _burn(uint(name));
             }
         } else {
             minted[name] = true;
         }
-        id = _id;
-        _id++;
-        names[id] = Name({
+        names[uint(name)] = Name({
             name: name,
             expiry: block.timestamp + duration * 365 days,
             whois: whois,
@@ -186,16 +200,16 @@ contract BeranamesRegistry is
         });
         address owner = to == address(0) ? _msgSender() : to;
         _safeMint(owner, id);
+        _count++;
     }
 
     function renewInternal(
         string[] calldata chars,
         uint duration
     ) internal whenNotPaused {
-        bytes32 _hash = keccak256(abi.encode(chars));
-        if (!minted[_hash]) revert NoEntity();
+        bytes32 name = keccak256(abi.encode(chars));
+        if (!minted[name]) revert NoEntity();
         if (duration < 1) revert LeaseTooShort();
-        uint256 id = nameIds[_hash];
-        names[id].expiry += duration * 365 days;
+        names[uint(name)].expiry += duration * 365 days;
     }
 }
