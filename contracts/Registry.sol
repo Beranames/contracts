@@ -121,14 +121,16 @@ contract BeranamesRegistry is
         if (expiry + GRACE_PERIOD < block.timestamp) {
             uint remainder;
             if (expiry < block.timestamp) {
-                remainder = (expiry - block.timestamp) / 365 days;
+                    remainder = (block.timestamp - expiry) / 365 days;
             }
             uint price = priceOracle().price(
                 chars,
                 duration + remainder,
                 address(0)
-            ) - priceOracle().price(chars, remainder, address(0));
-            console.log(price);
+            );
+            if (remainder > 0) {
+                price -= priceOracle().price(chars, remainder, address(0));
+            }
             payable(addressesProvider.FUNDS_MANAGER()).transfer(price);
             renewInternal(chars, duration);
         } else {
@@ -199,6 +201,7 @@ contract BeranamesRegistry is
             metadataURI: metadataURI
         });
         address owner = to == address(0) ? _msgSender() : to;
+        id = uint(name);
         _safeMint(owner, id);
         _count++;
     }

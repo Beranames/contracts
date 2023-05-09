@@ -7,7 +7,7 @@ import deployPriceOracleFixture from "./utils/deployPriceOracle";
 import deployRegistryFixture from "./utils/deployRegistry";
 import deployAuctionHouseFixture from "./utils/deployAuctionHouse";
 import { parseEther } from "ethers/lib/utils";
-import { network } from "hardhat";
+import { ethers, network } from "hardhat";
 
 describe("BeranamesRegistry", function () {
     async function setupFixture() {
@@ -68,12 +68,27 @@ describe("BeranamesRegistry", function () {
         });
         it("Should allow the owner to mint to the auction house", async function () {
             const { registry } = await loadFixture(setupFixture);
-            await expect(registry.mintToAuctionHouse([["🐻"], ["⛓️"]])).to.not.be.reverted;
+            await expect(registry.mintToAuctionHouse([["🐻"], ["😄"], ["🤪"]])).to.not.be.reverted;
         });
         it("Should not allow  non-owners to mint to the auction house", async function () {
             const { registry, otherAccount } = await loadFixture(setupFixture);
             const r = registry.connect(otherAccount);
             await expect(r.mintToAuctionHouse([["🐻‍❄️"]])).to.be.revertedWith("Ownable: caller is not the owner");
+        });
+    });
+
+    describe("Fields", function() {
+        it("Should allow to get total supply", async function() {
+            const { registry } = await loadFixture(setupFixture);
+            expect(await registry.totalSupply()).to.eq(0);
+        });
+        it("Should allow to get metadata URI of token by id", async function() {
+            const { registry } = await loadFixture(setupFixture);
+            expect(await registry.tokenURI(0)).to.eq("");
+        });
+        it("Should allow to get funds manager", async function() {
+            const { registry, manager } = await loadFixture(setupFixture);
+            expect(await registry.fundsManager()).to.eq(manager.address);
         });
     });
 
@@ -176,7 +191,7 @@ describe("BeranamesRegistry", function () {
         });
 
         describe("renewNative", function () {
-            it("should allow to renew", async function () {
+            it("Should allow to renew", async function () {
                 const { registry, owner } = await loadFixture(setupFixture);
                 await registry.togglePause();
                 await registry.mintNative(
@@ -189,8 +204,25 @@ describe("BeranamesRegistry", function () {
                         value: parseEther("80"),
                     }
                 );
-                await expect(registry.renewNative(["o", "o", "g", "a"], 1, { value: parseEther("80") })).to.not.be
-                    .reverted;
+                await network.provider.send("evm_increaseTime", [86400 * (365 * 2 + 31)]);
+                await expect(registry.renewNative(["o", "o", "g", "a"], 1, { value: parseEther("80") }))
+                    .to.not.be.reverted;
+            });
+        });
+
+        describe("mintERC20", function() {
+            it("Should allow to mint ERC20", async function() {
+                const { registry, owner, manager } = await loadFixture(setupFixture);
+                await registry.togglePause();
+
+                await expect(registry.mintERC20(
+                    ["o", "o", "g", "a"],
+                    1,
+                    owner.address,
+                    "https://www.google.com",
+                    owner.address,
+                    manager.address,
+                )).to.not.be.reverted;
             });
         });
     });
