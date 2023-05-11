@@ -50,6 +50,11 @@ contract BeranamesRegistry is
         _pause();
     }
 
+    modifier validDuration(uint duration) {
+        if (duration < 1) revert LeaseTooShort();
+        _;
+    }
+
     function totalSupply() public view override returns (uint256) {
         return _count;
     }
@@ -86,7 +91,7 @@ contract BeranamesRegistry is
         address whois,
         string calldata metadataURI,
         address to
-    ) external payable whenNotPaused returns (uint) {
+    ) external payable whenNotPaused validDuration(duration) returns (uint) {
         uint price = priceOracle().price(chars, duration, address(0));
         payable(addressesProvider.FUNDS_MANAGER()).transfer(price);
         return mintInternal(chars, duration, whois, metadataURI, to);
@@ -99,7 +104,7 @@ contract BeranamesRegistry is
         string calldata metadataURI,
         address to,
         IERC20 paymentAsset
-    ) external whenNotPaused returns (uint) {
+    ) external whenNotPaused validDuration(duration) returns (uint) {
         uint price = priceOracle().price(
             chars,
             duration,
@@ -114,15 +119,13 @@ contract BeranamesRegistry is
     function renewNative(
         string[] calldata chars,
         uint duration
-    ) external payable {
+    ) external payable validDuration(duration) {
         bytes32 id = keccak256(abi.encode(chars));
         if (!minted[id]) revert Nope();
         uint expiry = names[uint(id)].expiry;
         if (expiry + GRACE_PERIOD < block.timestamp) {
             uint remainder;
-            if (expiry < block.timestamp) {
-                    remainder = (block.timestamp - expiry) / 365 days;
-            }
+            remainder = (block.timestamp - expiry) / 365 days;
             uint price = priceOracle().price(
                 chars,
                 duration + remainder,
@@ -142,13 +145,14 @@ contract BeranamesRegistry is
         string[] calldata chars,
         uint duration,
         IERC20 paymentAsset
-    ) external payable {
+    ) external payable validDuration(duration) {
         uint price = priceOracle().price(
             chars,
             duration,
             address(paymentAsset)
         );
         paymentAsset.safeTransferFrom(_msgSender(), address(this), price);
+        paymentAsset.safeApprove(addressesProvider.FUNDS_MANAGER(), 0);
         paymentAsset.safeApprove(addressesProvider.FUNDS_MANAGER(), price);
         fundsManager().distributeFunds(paymentAsset, price);
         renewInternal(chars, duration);
@@ -158,7 +162,7 @@ contract BeranamesRegistry is
     function updateWhois(uint id, address aka) external {
         if (_msgSender() == ownerOf(id)) {
             names[id].whois = aka;
-        }
+        } else revert Nope();
     }
 
     function updateMetadataURI(
@@ -167,7 +171,7 @@ contract BeranamesRegistry is
     ) external {
         if (_msgSender() == ownerOf(id)) {
             names[id].metadataURI = metadataURI_;
-        }
+        } else revert Nope();
     }
 
     /** ADMIN */
@@ -182,8 +186,7 @@ contract BeranamesRegistry is
         address whois,
         string memory metadataURI,
         address to
-    ) internal returns (uint id) {
-        if (duration < 1) revert LeaseTooShort();
+    ) internal validDuration(duration) returns (uint id) {
         bytes32 name = keccak256(abi.encode(chars));
         if (minted[name]) {
             if (names[uint(name)].expiry > block.timestamp - GRACE_PERIOD) {
@@ -209,10 +212,9 @@ contract BeranamesRegistry is
     function renewInternal(
         string[] calldata chars,
         uint duration
-    ) internal whenNotPaused {
+    ) internal whenNotPaused validDuration(duration) {
         bytes32 name = keccak256(abi.encode(chars));
         if (!minted[name]) revert NoEntity();
-        if (duration < 1) revert LeaseTooShort();
         names[uint(name)].expiry += duration * 365 days;
     }
 }
