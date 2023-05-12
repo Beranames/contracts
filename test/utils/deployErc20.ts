@@ -3,12 +3,7 @@ import { ethers } from "hardhat";
 async function deployERC20() {
     const [owner, otherAccount] = await ethers.getSigners();
     const factory = await ethers.getContractFactory("TestErc20");
-    const erc20 = await factory.deploy(
-        "Beratoken", 
-        "BRT",
-        BigInt("90000000000000000000"),
-        owner.address
-        );
+    const erc20 = await factory.deploy();
 
     return { erc20, owner, otherAccount };
 }

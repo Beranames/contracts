@@ -305,7 +305,6 @@ describe("BeranamesRegistry", function () {
                 const { registry, owner, erc20 } = await loadFixture(setupFixture);
                 await registry.togglePause();
                 await erc20.approve(registry.address, BigInt("90000000000000000000"));
-                await erc20.mint(BigInt("90000000000000000000"), owner.address);
 
                 await registry.mintERC20(
                     ["o", "o", "g", "a"],
