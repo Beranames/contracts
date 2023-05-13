@@ -43,6 +43,7 @@ function price(chars: Array<string>, duration: bigint) {
         const x = BigInt(i);
         result += (ppy_ * BigInt(110) ** x) / BigInt(100) ** x;
     }
+    console.log(`Chars: ${chars} duration: ${duration.toString()} => price: ${result.toString()}`);
     return result;
 }
 
@@ -125,16 +126,32 @@ describe("PriceOracle", function () {
         describe("price", function () {
             it("Should return correct price", async function () {
                 let asset = ethers.constants.AddressZero;
-
                 expect(await _oracle.price(["b", "e", "r", "a"], 1, asset)).to.eq(ppy(["b", "e", "r", "a"]));
                 expect(await _oracle.price(["b", "e", "r", "a"], 3, asset)).to.eq(
                     price(["b", "e", "r", "a"], BigInt(3))
                 );
+                expect(await _oracle.price(["b", "e", "r", "a"], 4, asset)).to.eq(
+                    price(["b", "e", "r", "a"], BigInt(4))
+                );
+                expect(await _oracle.price(["b", "e", "r", "a"], 5, asset)).to.eq(
+                    price(["b", "e", "r", "a"], BigInt(5))
+                );
+                expect(await _oracle.price(["b", "e", "r", "a"], 6, asset)).to.eq(
+                    price(["b", "e", "r", "a"], BigInt(6))
+                );
+                expect(await _oracle.price(["b", "e", "r", "a"], 7, asset)).to.eq(
+                    price(["b", "e", "r", "a"], BigInt(7))
+                );
                 expect(await _oracle.price(["b", "e", "r", "a"], 10, asset)).to.eq(
                     price(["b", "e", "r", "a"], BigInt(10))
                 );
-
+                expect(await _oracle.price(["b", "e", "r", "a"], 20, asset)).to.eq(
+                    price(["b", "e", "r", "a"], BigInt(20))
+                );
                 expect(await _oracle.price(["🦆", "🐷"], 1, asset)).to.eq(ppy(["🦆", "🐷"]));
+                expect(await _oracle.price(["o", "o", "g", "a", "🦆", "🐷"], 8, asset)).to.eq(
+                    price(["o", "o", "g", "a", "🦆", "🐷"], BigInt(8))
+                );
             });
         });
 
