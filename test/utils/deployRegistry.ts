@@ -1,7 +1,7 @@
 import { ethers } from "hardhat";
 import deployAddressesProviderFixture from "./deployAddressesProvider";
 
-async function deplosyRegistryFixture() {
+async function deployRegistryFixture() {
     const { provider } = await deployAddressesProviderFixture();
     const [owner, otherAccount] = await ethers.getSigners();
     const factory = await ethers.getContractFactory("BeranamesRegistry");
@@ -10,4 +10,4 @@ async function deplosyRegistryFixture() {
     return { provider, registry, owner, otherAccount };
 }
 
-export default deplosyRegistryFixture;
+export default deployRegistryFixture;
