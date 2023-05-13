@@ -43,12 +43,17 @@ contract FundsManager is Ownable2Step {
     }
 
     receive() external payable {
-        console.logUint(msg.value);
+        // console.logUint(msg.value);
+        (uint toTeam, uint toFoundation) = _split(msg.value);
         // TODO - sort this
-        // (uint toTeam, uint toFoundation) = _split(msg.value);
         // payable(addressesProvider.TEAM_WALLET()).transfer(toTeam);
         // payable(addressesProvider.FOUNDATION_WALLET()).transfer(toFoundation);
         // _delegate(msg.value - toTeam - toFoundation);
+    }
+
+    fallback() external payable {
+        // console.logUint(msg.value);
+        (uint toTeam, uint toFoundation) = _split(msg.value);
     }
 
     /**
@@ -60,7 +65,7 @@ contract FundsManager is Ownable2Step {
      */
     function distributeFunds(IERC20 token, uint256 amount) external {
         if (amount == 0) revert ZeroAmount();
-        console.logUint(amount);
+        // console.logUint(amount);
         // token.transferFrom(msg.sender, address(this), amount);
         // uint256 toTeam = (amount * BPS_TO_TEAM) / BPS;
         // uint256 toFoundation = (amount * BPS_TO_FOUNDATION) / BPS;

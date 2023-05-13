@@ -138,16 +138,6 @@ describe("BeranamesRegistry", function () {
             it("Should allow to mint if price is paid", async function () {
                 const { registry, owner } = await loadFixture(setupFixture);
                 await registry.togglePause();
-                await registry.mintNative(
-                    ["o", "o", "g", "a"],
-                    1,
-                    owner.address,
-                    "https://example.com",
-                    owner.address,
-                    {
-                        value: parseEther("169"),
-                    }
-                );
                 await expect(
                     registry.mintNative(["o", "o", "g", "a"], 1, owner.address, "https://example.com", owner.address, {
                         value: parseEther("169"),
@@ -215,7 +205,7 @@ describe("BeranamesRegistry", function () {
             });
         });
         describe("renewNative", function () {
-            it("Should allow to renew", async function () {
+            it("Should not allow to renew if beyond GRACE_PERIOD", async function () {
                 const { registry, owner } = await loadFixture(setupFixture);
                 await registry.togglePause();
                 await registry.mintNative(
@@ -229,10 +219,10 @@ describe("BeranamesRegistry", function () {
                     }
                 );
                 await network.provider.send("evm_increaseTime", [86400 * (365 * 2 + 31)]);
-                await expect(registry.renewNative(["o", "o", "g", "a"], 1, { value: parseEther("169") })).to.not.be
+                await expect(registry.renewNative(["o", "o", "g", "a"], 1, { value: parseEther("169") })).to.be
                     .reverted;
             });
-            it("Should allow to renew also if remainder == 0", async function () {
+            it("Should allow to renew also if in GRACE_PERIOD", async function () {
                 const { registry, owner } = await loadFixture(setupFixture);
                 await registry.togglePause();
                 await registry.mintNative(
@@ -245,11 +235,11 @@ describe("BeranamesRegistry", function () {
                         value: parseEther("169"),
                     }
                 );
-                await network.provider.send("evm_increaseTime", [86400 * (365 + 31)]);
+                await network.provider.send("evm_increaseTime", [86400 * (365 + 29)]);
                 await expect(registry.renewNative(["o", "o", "g", "a"], 1, { value: parseEther("169") })).to.not.be
                     .reverted;
             });
-            it("Should not allow to renew if token is not expired", async function () {
+            it("Should allow to renew if brefore expiry", async function () {
                 const { registry, owner } = await loadFixture(setupFixture);
                 await registry.togglePause();
                 await registry.mintNative(
@@ -262,9 +252,8 @@ describe("BeranamesRegistry", function () {
                         value: parseEther("169"),
                     }
                 );
-                await expect(
-                    registry.renewNative(["o", "o", "g", "a"], 1, { value: parseEther("169") })
-                ).to.be.revertedWithCustomError(registry, "Nope");
+                await expect(registry.renewNative(["o", "o", "g", "a"], 1, { value: parseEther("169") })).to.not.be
+                    .reverted;
             });
 
             it("Should not allow to renew if token hasn't been minted yet", async function () {
@@ -359,7 +348,7 @@ describe("BeranamesRegistry", function () {
 
                 await expect(registry.renewERC20(["o", "o", "g", "a"], 1, erc20.address)).to.be.revertedWithCustomError(
                     registry,
-                    "NoEntity"
+                    "Nope"
                 );
             });
         });

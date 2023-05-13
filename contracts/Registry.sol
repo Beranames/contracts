@@ -139,9 +139,7 @@ contract BeranamesRegistry is
             }
             payable(addressesProvider.FUNDS_MANAGER()).transfer(price);
             renewInternal(chars, duration);
-        } else {
-            revert Nope();
-        }
+        } else revert Nope();
     }
 
     function renewERC20(
@@ -151,20 +149,16 @@ contract BeranamesRegistry is
     ) external payable validDuration(duration) {
         bytes32 id = keccak256(abi.encode(chars));
         uint expiry = names[uint(id)].expiry;
-        // console.log("expiry %s", expiry);
-        // console.log("block %s", block.timestamp);
         if (expiry + GRACE_PERIOD > block.timestamp) {
             uint remainder;
             if (expiry > block.timestamp) {
                 remainder = (expiry - block.timestamp) / 365 days;
             }
-            // console.log("remainder %s", remainder);
             uint price = priceOracle().price(
                 chars,
                 duration + remainder,
                 address(paymentAsset)
             );
-            // console.log("a: %s", price);
             if (remainder > 0) {
                 price -= priceOracle().price(
                     chars,
@@ -172,7 +166,6 @@ contract BeranamesRegistry is
                     address(paymentAsset)
                 );
             }
-            // console.log("b: %s", price);
             paymentAsset.safeTransferFrom(_msgSender(), address(this), price);
             paymentAsset.approve(addressesProvider.FUNDS_MANAGER(), price);
             fundsManager().distributeFunds(paymentAsset, price);

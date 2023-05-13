@@ -82,7 +82,6 @@ describe("AuctionHouse", function () {
                         "Nope"
                     );
 
-                    // await createAuction(0, 0, (await getTimestamp()) + 10, 0);
                     await expect(
                         createAuction(getTokenId(), await getTimestamp(), (await getTimestamp()) + 10, 0)
                     ).to.be.revertedWithCustomError(_auctionHouse, "Nope");
