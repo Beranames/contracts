@@ -79,7 +79,6 @@ contract PriceOracle is Ownable2Step {
                 amount += (namePricePerYear * 110 ** i) / 100 ** i;
             }
         }
-        // console.log("duration: %s | amount: %s", duration, amount);
     }
 
     /**

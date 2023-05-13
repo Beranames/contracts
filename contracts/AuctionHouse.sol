@@ -60,14 +60,13 @@ contract AuctionHouse is Ownable2Step, Pausable, ERC721Holder {
         if (registry().ownerOf(tokenId) != address(this)) {
             revert Nope();
         }
-        // Check input end value to be later than "now"
         if (end <= block.timestamp) {
             revert Nope();
         }
-        // Check if auction with current tokenId already existsx
         if (auctions[tokenId].end != 0) {
             revert Nope();
         }
+        if (end - start < 24 hours) revert Nope();
         auctions[tokenId] = Auction({
             start: start,
             end: end,

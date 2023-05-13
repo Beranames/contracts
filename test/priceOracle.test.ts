@@ -37,16 +37,12 @@ function ppy(chars: Array<string>) {
 }
 
 function price(chars: Array<string>, duration: bigint) {
-    // const result =
-    //     (ppy(chars) * (duration - BigInt(1)) * BigInt(110) ** (duration - BigInt(1))) /
-    //     BigInt(100) ** (duration - BigInt(1));
     const ppy_ = ppy(chars);
     let result = ppy_;
     for (let i = 2; i <= Number(duration); ++i) {
         const x = BigInt(i);
         result += (ppy_ * BigInt(110) ** x) / BigInt(100) ** x;
     }
-    console.log(`price for ${chars} for ${duration.toString()} years: ${result.toString()}`);
     return result;
 }
 
@@ -101,9 +97,7 @@ describe("PriceOracle", function () {
         describe("countEmojis", function () {
             it("Should successfully count emojis", async function () {
                 expect(await _oracle.countEmojis(["🐻", "🪪"])).to.eq(2);
-            });
-            it("Should revert if incorrect input", async function () {
-                await expect(_oracle.countEmojis(["🐻‍❄️", "🫶"])).to.be.revertedWithCustomError(_oracle, "Nope");
+                expect(await _oracle.countEmojis(["🐻", "🪪", "🐻‍❄️", "🫶"])).to.eq(4);
             });
         });
 

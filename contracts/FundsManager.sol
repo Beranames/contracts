@@ -43,7 +43,7 @@ contract FundsManager is Ownable2Step {
     }
 
     receive() external payable {
-        console.log("received %s", msg.value);
+        console.logUint(msg.value);
         // TODO - sort this
         // (uint toTeam, uint toFoundation) = _split(msg.value);
         // payable(addressesProvider.TEAM_WALLET()).transfer(toTeam);
@@ -60,7 +60,7 @@ contract FundsManager is Ownable2Step {
      */
     function distributeFunds(IERC20 token, uint256 amount) external {
         if (amount == 0) revert ZeroAmount();
-        console.log("received %s", amount);
+        console.logUint(amount);
         // token.transferFrom(msg.sender, address(this), amount);
         // uint256 toTeam = (amount * BPS_TO_TEAM) / BPS;
         // uint256 toFoundation = (amount * BPS_TO_FOUNDATION) / BPS;

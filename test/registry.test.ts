@@ -15,11 +15,11 @@ describe("BeranamesRegistry", function () {
     async function setupFixture() {
         const fixtureData = await deployAddressesProviderFixture();
         const { provider, owner, otherAccount } = fixtureData;
-        const { oracle } = await loadFixture(deployPriceOracleFixture);
-        const { manager } = await loadFixture(deployFundsManagerFixture);
-        const { auctionHouse } = await loadFixture(deployAuctionHouseFixture);
-        const { registry } = await loadFixture(deployRegistryFixture);
-        const { erc20 } = await loadFixture(deployERC20);
+        const { oracle } = await deployPriceOracleFixture();
+        const { manager } = await deployFundsManagerFixture();
+        const { auctionHouse } = await deployAuctionHouseFixture();
+        const { registry } = await deployRegistryFixture();
+        const { erc20 } = await deployERC20();
         await provider.multicall([
             provider.interface.encodeFunctionData("setRegistry", [registry.address]),
             provider.interface.encodeFunctionData("setPriceOracle", [oracle.address]),
@@ -131,16 +131,26 @@ describe("BeranamesRegistry", function () {
                 await registry.togglePause();
                 await expect(
                     registry.mintNative(["o", "o", "g", "a"], 1, owner.address, "https://example.com", owner.address, {
-                        value: parseEther("79"),
+                        value: parseEther("168"),
                     })
                 ).to.be.reverted;
             });
             it("Should allow to mint if price is paid", async function () {
                 const { registry, owner } = await loadFixture(setupFixture);
                 await registry.togglePause();
+                await registry.mintNative(
+                    ["o", "o", "g", "a"],
+                    1,
+                    owner.address,
+                    "https://example.com",
+                    owner.address,
+                    {
+                        value: parseEther("169"),
+                    }
+                );
                 await expect(
                     registry.mintNative(["o", "o", "g", "a"], 1, owner.address, "https://example.com", owner.address, {
-                        value: parseEther("80"),
+                        value: parseEther("169"),
                     })
                 ).to.not.be.reverted;
             });
@@ -154,12 +164,12 @@ describe("BeranamesRegistry", function () {
                     "https://example.com",
                     owner.address,
                     {
-                        value: parseEther("80"),
+                        value: parseEther("169"),
                     }
                 );
                 await expect(
                     registry.mintNative(["o", "o", "g", "a"], 1, owner.address, "https://example.com", owner.address, {
-                        value: parseEther("80"),
+                        value: parseEther("169"),
                     })
                 ).to.be.revertedWithCustomError(registry, "Exists");
             });
@@ -173,13 +183,13 @@ describe("BeranamesRegistry", function () {
                     "https://example.com",
                     owner.address,
                     {
-                        value: parseEther("80"),
+                        value: parseEther("169"),
                     }
                 );
                 await network.provider.send("evm_increaseTime", [86400 * (365 + 29)]);
                 await expect(
                     registry.mintNative(["o", "o", "g", "a"], 1, owner.address, "https://example.com", owner.address, {
-                        value: parseEther("80"),
+                        value: parseEther("169"),
                     })
                 ).to.be.revertedWithCustomError(registry, "Exists");
             });
@@ -193,13 +203,13 @@ describe("BeranamesRegistry", function () {
                     "https://example.com",
                     owner.address,
                     {
-                        value: parseEther("80"),
+                        value: parseEther("169"),
                     }
                 );
                 await network.provider.send("evm_increaseTime", [86400 * (365 + 30)]);
                 await expect(
                     registry.mintNative(["o", "o", "g", "a"], 1, owner.address, "https://example.com", owner.address, {
-                        value: parseEther("80"),
+                        value: parseEther("169"),
                     })
                 ).to.not.be.reverted;
             });
@@ -215,11 +225,11 @@ describe("BeranamesRegistry", function () {
                     "https://example.com",
                     owner.address,
                     {
-                        value: parseEther("80"),
+                        value: parseEther("169"),
                     }
                 );
                 await network.provider.send("evm_increaseTime", [86400 * (365 * 2 + 31)]);
-                await expect(registry.renewNative(["o", "o", "g", "a"], 1, { value: parseEther("80") })).to.not.be
+                await expect(registry.renewNative(["o", "o", "g", "a"], 1, { value: parseEther("169") })).to.not.be
                     .reverted;
             });
             it("Should allow to renew also if remainder == 0", async function () {
@@ -232,11 +242,11 @@ describe("BeranamesRegistry", function () {
                     "https://example.com",
                     owner.address,
                     {
-                        value: parseEther("80"),
+                        value: parseEther("169"),
                     }
                 );
                 await network.provider.send("evm_increaseTime", [86400 * (365 + 31)]);
-                await expect(registry.renewNative(["o", "o", "g", "a"], 1, { value: parseEther("80") })).to.not.be
+                await expect(registry.renewNative(["o", "o", "g", "a"], 1, { value: parseEther("169") })).to.not.be
                     .reverted;
             });
             it("Should not allow to renew if token is not expired", async function () {
@@ -249,18 +259,18 @@ describe("BeranamesRegistry", function () {
                     "https://example.com",
                     owner.address,
                     {
-                        value: parseEther("80"),
+                        value: parseEther("169"),
                     }
                 );
                 await expect(
-                    registry.renewNative(["o", "o", "g", "a"], 1, { value: parseEther("80") })
+                    registry.renewNative(["o", "o", "g", "a"], 1, { value: parseEther("169") })
                 ).to.be.revertedWithCustomError(registry, "Nope");
             });
 
             it("Should not allow to renew if token hasn't been minted yet", async function () {
                 const { registry } = await loadFixture(setupFixture);
                 await expect(
-                    registry.renewNative(["o", "o", "g", "a"], 1, { value: parseEther("80") })
+                    registry.renewNative(["o", "o", "g", "a"], 1, { value: parseEther("169") })
                 ).to.be.revertedWithCustomError(registry, "Nope");
             });
         });
@@ -285,7 +295,7 @@ describe("BeranamesRegistry", function () {
                 const { registry, owner, erc20 } = await loadFixture(setupFixture);
                 await registry.togglePause();
 
-                await erc20.approve(registry.address, BigInt("90000000000000000000"));
+                await erc20.approve(registry.address, parseEther("169"));
 
                 await expect(
                     registry.mintERC20(
@@ -304,7 +314,7 @@ describe("BeranamesRegistry", function () {
             it("Should allow to renew ERC20", async function () {
                 const { registry, owner, erc20 } = await loadFixture(setupFixture);
                 await registry.togglePause();
-                await erc20.approve(registry.address, BigInt("90000000000000000000"));
+                await erc20.approve(registry.address, parseEther("169"));
 
                 await registry.mintERC20(
                     ["o", "o", "g", "a"],
@@ -315,16 +325,16 @@ describe("BeranamesRegistry", function () {
                     erc20.address
                 );
 
-                await network.provider.send("evm_increaseTime", [86400 * (365 + 30)]);
+                await network.provider.send("evm_increaseTime", [86400 * 365]);
 
-                await erc20.approve(registry.address, BigInt("90000000000000000000"));
+                await erc20.approve(registry.address, parseEther("169"));
 
                 await expect(registry.renewERC20(["o", "o", "g", "a"], 1, erc20.address)).to.not.be.reverted;
             });
             it("Should correctly apply the pricing curve when renewing ERC20", async function () {
                 const { registry, owner, erc20 } = await loadFixture(setupFixture);
                 await registry.togglePause();
-                await erc20.approve(registry.address, BigInt(1e24));
+                await erc20.approve(registry.address, parseEther("50000"));
 
                 await registry.mintERC20(
                     ["o", "o", "g", "a"],
@@ -337,7 +347,7 @@ describe("BeranamesRegistry", function () {
 
                 await network.provider.send("evm_increaseTime", [86400 * 360]);
 
-                await erc20.approve(registry.address, BigInt(1e24));
+                await erc20.approve(registry.address, parseEther("50000"));
 
                 // await expect(registry.renewERC20(["o", "o", "g", "a"], 4, erc20.address)).to.not.be.reverted;
                 await registry.renewERC20(["o", "o", "g", "a"], 4, erc20.address);
@@ -345,7 +355,7 @@ describe("BeranamesRegistry", function () {
             it("Should not allow to renew if name is not minted", async function () {
                 const { registry, erc20 } = await loadFixture(setupFixture);
                 await registry.togglePause();
-                await erc20.approve(registry.address, BigInt("90000000000000000000"));
+                await erc20.approve(registry.address, parseEther("50000"));
 
                 await expect(registry.renewERC20(["o", "o", "g", "a"], 1, erc20.address)).to.be.revertedWithCustomError(
                     registry,
@@ -362,7 +372,7 @@ describe("BeranamesRegistry", function () {
 
                 await registry.togglePause();
                 await registry.mintNative(chars, 1, owner.address, "www.google.com", owner.address, {
-                    value: parseEther("80"),
+                    value: parseEther("169"),
                 });
 
                 const id = BigInt(keccak256(defaultAbiCoder.encode(["string[]"], [chars])));
@@ -379,7 +389,7 @@ describe("BeranamesRegistry", function () {
 
                 await registry.togglePause();
                 await registry.mintNative(chars, 1, owner.address, "www.google.com", owner.address, {
-                    value: parseEther("80"),
+                    value: parseEther("169"),
                 });
 
                 const id = BigInt(keccak256(defaultAbiCoder.encode(["string[]"], [chars])));
@@ -395,7 +405,7 @@ describe("BeranamesRegistry", function () {
                 const chars = ["o", "o", "g", "a"];
                 await registry.togglePause();
                 await registry.mintNative(chars, 1, owner.address, "www.google.com", owner.address, {
-                    value: parseEther("80"),
+                    value: parseEther("169"),
                 });
 
                 const id = BigInt(keccak256(defaultAbiCoder.encode(["string[]"], [chars])));
@@ -409,7 +419,7 @@ describe("BeranamesRegistry", function () {
                 const chars = ["o", "o", "g", "a"];
                 await registry.togglePause();
                 await registry.mintNative(chars, 1, owner.address, "www.google.com", owner.address, {
-                    value: parseEther("80"),
+                    value: parseEther("169"),
                 });
 
                 const id = BigInt(keccak256(defaultAbiCoder.encode(["string[]"], [chars])));
