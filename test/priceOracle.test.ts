@@ -2,6 +2,53 @@ import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect, should } from "chai";
 import { ethers } from "hardhat";
 import deployPriceOracle from "./utils/deployPriceOracle";
+import emojis from "../scripts/emojis/list";
+
+function ppy(chars: Array<string>) {
+    const emojiCount = chars.reduce((acc, char) => {
+        if (emojis.includes(char)) return acc + 1;
+        return acc;
+    }, 0);
+    let ppy: bigint;
+    switch (chars.length) {
+        case 1:
+            ppy = BigInt(999);
+            break;
+        case 2:
+            ppy = BigInt(690);
+            break;
+        case 3:
+            ppy = BigInt(420);
+            break;
+        case 4:
+            ppy = BigInt(169);
+            break;
+        default:
+            ppy = BigInt(25);
+            break;
+    }
+    ppy *= BigInt(1e18);
+    if (chars.length == emojiCount) {
+        ppy += (ppy * BigInt(69)) / BigInt(100);
+    } else if (emojiCount > 0) {
+        ppy += (ppy * BigInt(25)) / BigInt(100);
+    }
+    return ppy;
+}
+
+function price(chars: Array<string>, duration: bigint) {
+    // const result =
+    //     (ppy(chars) * (duration - BigInt(1)) * BigInt(110) ** (duration - BigInt(1))) /
+    //     BigInt(100) ** (duration - BigInt(1));
+    const ppy_ = ppy(chars);
+    let result = ppy_;
+    for (let i = 2; i <= Number(duration); ++i) {
+        const x = BigInt(i);
+        result += (ppy_ * BigInt(110) ** x) / BigInt(100) ** x;
+    }
+    console.log(`price for ${chars} for ${duration.toString()} years: ${result.toString()}`);
+    return result;
+}
 
 describe("PriceOracle", function () {
     let _oracle: any;
@@ -62,45 +109,38 @@ describe("PriceOracle", function () {
 
         describe("dollarPriceForNamePerYear", function () {
             it("Should return a correct price", async function () {
-                let emojis = ["🐻‍❄️", "🫶", "🎃", "💩", "😮"];
-                await _oracle.setEmojis(emojis);
-                expect(await _oracle.dollarPriceForNamePerYear(["🐻‍❄️", "🫶"])).to.eq(BigInt((690 * 1e18 * 69) / 100));
-                expect(await _oracle.dollarPriceForNamePerYear(["🐻‍❄️", "🫶", "🎃"])).to.eq(
-                    BigInt((450 * 1e18 * 69) / 100)
-                );
+                expect(await _oracle.dollarPriceForNamePerYear(["🐻‍❄️", "🫶"])).to.eq(ppy(["🐻‍❄️", "🫶"]));
+                expect(await _oracle.dollarPriceForNamePerYear(["🐻‍❄️", "🫶", "🎃"])).to.eq(ppy(["🐻‍❄️", "🫶", "🎃"]));
                 expect(await _oracle.dollarPriceForNamePerYear(["🫶", "🐻‍❄️", "🎃", "💩"])).to.eq(
-                    BigInt((80 * 1e18 * 69) / 100)
+                    ppy(["🫶", "🐻‍❄️", "🎃", "💩"])
                 );
                 expect(await _oracle.dollarPriceForNamePerYear(["🐻‍❄️", "🫶", "🎃", "💩", "😮"])).to.eq(
-                    BigInt((25 * 1e18 * 69) / 100)
+                    ppy(["🐻‍❄️", "🫶", "🎃", "💩", "😮"])
                 );
                 expect(await _oracle.dollarPriceForNamePerYear(["b", "e", "r", "a", "🐻‍❄️"])).to.eq(
-                    BigInt((25 * 1e18 * 25) / 100)
+                    ppy(["b", "e", "r", "a", "🐻‍❄️"])
                 );
-                expect(await _oracle.dollarPriceForNamePerYear(["o"])).to.eq(BigInt(999 * 1e18));
+                expect(await _oracle.dollarPriceForNamePerYear(["o"])).to.eq(ppy(["o"]));
             });
 
-            it("Should revert if input length == 1", async function () {
+            it("Should revert if single emoji", async function () {
                 await expect(_oracle.dollarPriceForNamePerYear(["🐻"])).to.be.revertedWithCustomError(_oracle, "Nope");
             });
         });
 
         describe("price", function () {
             it("Should return correct price", async function () {
-                await _oracle.setEmojis(["🦆", "🐷"]);
                 let asset = ethers.constants.AddressZero;
 
-                function exponent(duration: bigint) {
-                    return duration - BigInt(1) + BigInt(110) ** duration / BigInt(100) ** duration;
-                }
-
-                expect(await _oracle.price(["b", "e", "r", "a"], 1, asset)).to.eq(BigInt(Math.floor(80 * 1e18)));
-
-                expect(await _oracle.price(["🦆", "🐷"], 1, asset)).to.eq(BigInt((690 * 1e18 * 69) / 100));
-
-                expect(await _oracle.price(["🦆", "🐷"], 3, asset)).to.eq(
-                    BigInt((690 * 1e18 * 69) / 100) * exponent(BigInt(3))
+                expect(await _oracle.price(["b", "e", "r", "a"], 1, asset)).to.eq(ppy(["b", "e", "r", "a"]));
+                expect(await _oracle.price(["b", "e", "r", "a"], 3, asset)).to.eq(
+                    price(["b", "e", "r", "a"], BigInt(3))
                 );
+                expect(await _oracle.price(["b", "e", "r", "a"], 10, asset)).to.eq(
+                    price(["b", "e", "r", "a"], BigInt(10))
+                );
+
+                expect(await _oracle.price(["🦆", "🐷"], 1, asset)).to.eq(ppy(["🦆", "🐷"]));
             });
         });
 
