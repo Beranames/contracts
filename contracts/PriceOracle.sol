@@ -46,9 +46,9 @@ contract PriceOracle is Ownable2Step {
         } else if (chars.length == 2) {
             amount = 690;
         } else if (chars.length == 3) {
-            amount = 450;
+            amount = 420;
         } else if (chars.length == 4) {
-            amount = 80;
+            amount = 169;
         } else {
             amount = 25;
         }
@@ -69,16 +69,18 @@ contract PriceOracle is Ownable2Step {
         uint duration,
         address asset
     ) external view returns (uint256 amount) {
-        uint assetPrice = _fetchAssetPrice(asset); // X * 1e18
-        uint namePricePerYear = dollarPriceForNamePerYear(name); // Y * 1e18
+        uint assetPrice = _fetchAssetPrice(asset); // X base 1e18
+        uint namePricePerYear = dollarPriceForNamePerYear(name); // Y base 1e18
         if (duration == 1) {
-            amount = (namePricePerYear * assetPrice) / 1e18; // (Y*1e18 * X1e18) / 1e18
+            amount = ((namePricePerYear * 1e18) / assetPrice);
         } else {
-            amount =
-                namePricePerYear *
-                ((duration - 1) + ((110) ** duration / 100 ** duration));
+            amount = ((namePricePerYear * 1e18) / assetPrice);
+            for (uint i = 2; i <= duration; ++i) {
+                uint markup = amount / 10;
+                amount = namePricePerYear * i + markup;
+            }
         }
-        console.logUint(amount);
+        console.log("duration: %s | amount: %s", duration, amount);
     }
 
     /**

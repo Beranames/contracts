@@ -110,8 +110,9 @@ contract BeranamesRegistry is
             duration,
             address(paymentAsset)
         );
+        console.log(price);
         paymentAsset.safeTransferFrom(_msgSender(), address(this), price);
-        paymentAsset.safeApprove(addressesProvider.FUNDS_MANAGER(), price);
+        paymentAsset.approve(addressesProvider.FUNDS_MANAGER(), price);
         fundsManager().distributeFunds(paymentAsset, price);
         return mintInternal(chars, duration, whois, metadataURI, to);
     }
@@ -123,9 +124,11 @@ contract BeranamesRegistry is
         bytes32 id = keccak256(abi.encode(chars));
         if (!minted[id]) revert Nope();
         uint expiry = names[uint(id)].expiry;
-        if (expiry + GRACE_PERIOD < block.timestamp) {
+        if (expiry + GRACE_PERIOD > block.timestamp) {
             uint remainder;
-            remainder = (block.timestamp - expiry) / 365 days;
+            if (expiry > block.timestamp) {
+                remainder = (expiry - block.timestamp) / 365 days;
+            }
             uint price = priceOracle().price(
                 chars,
                 duration + remainder,
@@ -146,16 +149,35 @@ contract BeranamesRegistry is
         uint duration,
         IERC20 paymentAsset
     ) external payable validDuration(duration) {
-        uint price = priceOracle().price(
-            chars,
-            duration,
-            address(paymentAsset)
-        );
-        paymentAsset.safeTransferFrom(_msgSender(), address(this), price);
-        paymentAsset.safeApprove(addressesProvider.FUNDS_MANAGER(), 0);
-        paymentAsset.safeApprove(addressesProvider.FUNDS_MANAGER(), price);
-        fundsManager().distributeFunds(paymentAsset, price);
-        renewInternal(chars, duration);
+        bytes32 id = keccak256(abi.encode(chars));
+        uint expiry = names[uint(id)].expiry;
+        // console.log("expiry %s", expiry);
+        // console.log("block %s", block.timestamp);
+        if (expiry + GRACE_PERIOD > block.timestamp) {
+            uint remainder;
+            if (expiry > block.timestamp) {
+                remainder = (expiry - block.timestamp) / 365 days;
+            }
+            // console.log("remainder %s", remainder);
+            uint price = priceOracle().price(
+                chars,
+                duration + remainder,
+                address(paymentAsset)
+            );
+            // console.log("a: %s", price);
+            if (remainder > 0) {
+                price -= priceOracle().price(
+                    chars,
+                    remainder,
+                    address(paymentAsset)
+                );
+            }
+            // console.log("b: %s", price);
+            paymentAsset.safeTransferFrom(_msgSender(), address(this), price);
+            paymentAsset.approve(addressesProvider.FUNDS_MANAGER(), price);
+            fundsManager().distributeFunds(paymentAsset, price);
+            renewInternal(chars, duration);
+        } else revert Nope();
     }
 
     /**  UPDATE NAME */
@@ -188,23 +210,23 @@ contract BeranamesRegistry is
         address to
     ) internal validDuration(duration) returns (uint id) {
         bytes32 name = keccak256(abi.encode(chars));
+        id = uint(name);
         if (minted[name]) {
-            if (names[uint(name)].expiry > block.timestamp - GRACE_PERIOD) {
+            if (names[id].expiry > block.timestamp - GRACE_PERIOD) {
                 revert Exists();
             } else {
-                _burn(uint(name));
+                _burn(id);
             }
         } else {
             minted[name] = true;
         }
-        names[uint(name)] = Name({
+        names[id] = Name({
             name: name,
             expiry: block.timestamp + duration * 365 days,
             whois: whois,
             metadataURI: metadataURI
         });
         address owner = to == address(0) ? _msgSender() : to;
-        id = uint(name);
         _safeMint(owner, id);
         _count++;
     }
