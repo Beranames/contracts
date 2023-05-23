@@ -4,11 +4,11 @@ pragma abicoder v2;
 
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import {Nope, InputError} from "./common/Errors.sol";
 
 import "hardhat/console.sol";
 
 contract PriceOracle is Ownable2Step {
-    error Nope();
     mapping(bytes => bool) public isEmoji;
     mapping(address => address) public priceFeeds; // asset => priceFeed
 
@@ -31,7 +31,7 @@ contract PriceOracle is Ownable2Step {
                 if (isEmoji[bytes(chars[i])]) {
                     emojis++;
                 } else {
-                    revert Nope();
+                    revert InputError(chars[i]);
                 }
             }
         }
@@ -55,7 +55,7 @@ contract PriceOracle is Ownable2Step {
         amount *= 1e18;
         // cannot mint single emojis on your own
         if (chars.length == 1 && emojis == 1) {
-            revert Nope();
+            revert Nope("cannot mint single emojis on your own");
         }
         if (chars.length == emojis) {
             amount += (amount * 69) / 100;
