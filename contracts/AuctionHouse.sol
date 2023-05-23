@@ -11,7 +11,7 @@ import {Pausable} from "@openzeppelin/contracts/security/Pausable.sol";
 import {IAddressesProvider} from "./interfaces/IAddressesProvider.sol";
 import {IFundsManager} from "./interfaces/IFundsManager.sol";
 
-import "./common/Errors.sol";
+import {Nope, InputError, ZeroAddress} from "./common/Errors.sol";
 
 contract AuctionHouse is Ownable2Step, Pausable, ERC721Holder {
     struct Bid {
