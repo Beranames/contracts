@@ -14,6 +14,7 @@ import {IFundsManager} from "./interfaces/IFundsManager.sol";
 import {IPriceOracle} from "./interfaces/IPriceOracle.sol";
 
 import {console} from "hardhat/console.sol";
+import {StringComparison} from "./utils/StringComparison.sol";
 
 contract BeranamesRegistry is
     Ownable2Step,
@@ -22,10 +23,13 @@ contract BeranamesRegistry is
     Multicall
 {
     using SafeERC20 for IERC20;
+    using StringComparison for string;
+
     error NoEntity();
     error LeaseTooShort();
     error InsufficientBalance();
     error Exists();
+    error InvalidChar(string char);
     error Nope();
 
     struct Name {
@@ -52,6 +56,16 @@ contract BeranamesRegistry is
 
     modifier validDuration(uint duration) {
         if (duration < 1) revert LeaseTooShort();
+        _;
+    }
+
+    modifier checkFullstops(string[] memory chars) {
+        for (uint i = 0; i < chars.length; i++) {
+            string memory char = chars[i];
+            if (char.equal(".")) {
+                revert InvalidChar(char);
+            }
+        }
         _;
     }
 
@@ -91,7 +105,7 @@ contract BeranamesRegistry is
         address whois,
         string calldata metadataURI,
         address to
-    ) external payable whenNotPaused validDuration(duration) returns (uint) {
+    ) external payable whenNotPaused validDuration(duration) checkFullstops(chars) returns (uint) {
         uint price = priceOracle().price(chars, duration, address(0));
         payable(addressesProvider.FUNDS_MANAGER()).transfer(price);
         return mintInternal(chars, duration, whois, metadataURI, to);
@@ -104,7 +118,7 @@ contract BeranamesRegistry is
         string calldata metadataURI,
         address to,
         IERC20 paymentAsset
-    ) external whenNotPaused validDuration(duration) returns (uint) {
+    ) external whenNotPaused validDuration(duration) checkFullstops(chars) returns (uint) {
         uint price = priceOracle().price(
             chars,
             duration,
@@ -201,7 +215,7 @@ contract BeranamesRegistry is
         address whois,
         string memory metadataURI,
         address to
-    ) internal validDuration(duration) returns (uint id) {
+    ) internal validDuration(duration) checkFullstops(chars) returns (uint id) {
         bytes32 name = keccak256(abi.encode(chars));
         id = uint(name);
         if (minted[name]) {
