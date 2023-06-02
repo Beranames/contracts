@@ -23,14 +23,27 @@ contract PriceOracle is Ownable2Step {
         }
     }
 
-    function countEmojis(
+    /**
+     * @notice Count the number of emojis in a string
+     * @dev forced to loop over all members of the name
+     */
+    function countEmojisAndCheckForInvalidCharacters(
         string[] calldata chars
     ) public view returns (uint256 emojis) {
+        bytes32 space = keccak256(abi.encode(" "));
+        bytes32 empty = keccak256(abi.encode(""));
+        bytes32 fullstop = keccak256(abi.encode("."));
         for (uint256 i = 0; i < chars.length; i++) {
-            if (bytes(chars[i]).length > 1) {
-                if (isEmoji[bytes(chars[i])]) {
+            bytes memory member = bytes(chars[i]);
+            if (member.length > 1) {
+                if (isEmoji[member]) {
                     emojis++;
                 } else {
+                    revert Nope();
+                }
+            } else {
+                bytes32 encodedMember = keccak256(abi.encode(chars[i]));
+                if (encodedMember == space || encodedMember == empty || encodedMember == fullstop) {
                     revert Nope();
                 }
             }
@@ -40,7 +53,7 @@ contract PriceOracle is Ownable2Step {
     function dollarPriceForNamePerYear(
         string[] calldata chars
     ) public view returns (uint256 amount) {
-        uint emojis = countEmojis(chars);
+        uint emojis = countEmojisAndCheckForInvalidCharacters(chars);
         if (chars.length == 1) {
             amount = 999;
         } else if (chars.length == 2) {

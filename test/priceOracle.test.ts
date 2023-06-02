@@ -95,10 +95,15 @@ describe("PriceOracle", function () {
             });
         });
 
-        describe("countEmojis", function () {
+        describe("countEmojisAndCheckForInvalidCharacters", function () {
             it("Should successfully count emojis", async function () {
-                expect(await _oracle.countEmojis(["🐻", "🪪"])).to.eq(2);
-                expect(await _oracle.countEmojis(["🐻", "🪪", "🐻‍❄️", "🫶"])).to.eq(4);
+                expect(await _oracle.countEmojisAndCheckForInvalidCharacters(["🐻", "🪪"])).to.eq(2);
+                expect(await _oracle.countEmojisAndCheckForInvalidCharacters(["🐻", "🪪", "🐻‍❄️", "🫶"])).to.eq(4);
+            });
+            it("Should check for invalid chars", async function () {
+                expect(await _oracle.countEmojisAndCheckForInvalidCharacters(["🐻", "🪪", ""])).to.be.reverted;
+                expect(await _oracle.countEmojisAndCheckForInvalidCharacters(["🐻", "🪪", " "])).to.be.reverted;
+                expect(await _oracle.countEmojisAndCheckForInvalidCharacters(["🐻", "🪪", "."])).to.be.reverted;
             });
         });
 
