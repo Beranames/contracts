@@ -35,6 +35,8 @@ contract BeranamesRegistry is
         string metadataURI;
     }
 
+    event Mint(uint256 indexed id, string[] chars, address indexed to);
+
     uint256 constant GRACE_PERIOD = 30 days;
     IAddressesProvider public addressesProvider;
 
@@ -222,6 +224,7 @@ contract BeranamesRegistry is
         address owner = to == address(0) ? _msgSender() : to;
         _safeMint(owner, id);
         _count++;
+        emit Mint(id, chars, owner);
     }
 
     function renewInternal(
