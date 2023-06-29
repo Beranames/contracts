@@ -222,9 +222,9 @@ contract BeranamesRegistry is
             metadataURI: metadataURI
         });
         address owner = to == address(0) ? _msgSender() : to;
+        emit Mint(id, chars, owner);
         _safeMint(owner, id);
         _count++;
-        emit Mint(id, chars, owner);
     }
 
     function renewInternal(
