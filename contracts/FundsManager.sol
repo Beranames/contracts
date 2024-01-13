@@ -7,12 +7,6 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IAddressesProvider} from "./interfaces/IAddressesProvider.sol";
 import {IStakingModule} from "./interfaces/IStaking.sol";
 import "hardhat/console.sol";
-// Errors
-error ZeroAddress();
-error ZeroAmount();
-error InvalidValue();
-error FailedToDelegate();
-error FailedToUndelegate();
 
 contract FundsManager is Ownable2Step {
     IStakingModule public immutable STAKING_MODULE =
@@ -25,6 +19,12 @@ contract FundsManager is Ownable2Step {
 
     event Success(bool indexed success);
     event Data(bytes data);
+
+    // Errors
+    error ZeroAmount();
+    error InvalidValue();
+    error FailedToDelegate();
+    error FailedToUndelegate();
 
     constructor(IAddressesProvider addressesProvider_) {
         addressesProvider = addressesProvider_;

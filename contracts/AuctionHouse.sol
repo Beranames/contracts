@@ -11,10 +11,8 @@ import {Pausable} from "@openzeppelin/contracts/security/Pausable.sol";
 import {IAddressesProvider} from "./interfaces/IAddressesProvider.sol";
 import {IFundsManager} from "./interfaces/IFundsManager.sol";
 
-error Nope();
+import {Nope, InputError, ZeroAddress} from "./common/Errors.sol";
 
-/**
- */
 contract AuctionHouse is Ownable2Step, Pausable, ERC721Holder {
     struct Bid {
         address bidder;
@@ -35,6 +33,11 @@ contract AuctionHouse is Ownable2Step, Pausable, ERC721Holder {
     );
     event BidPlaced(uint256 id, address indexed bidder, uint256 amount);
     event Claimed(uint256 id, address indexed bidder);
+
+    error AuctionFinished(uint end);
+    error AuctionNotFinished(uint end);
+    error AuctionNotStarted(uint start);
+    error AuctionNotFound(uint id);
 
     IAddressesProvider public addressesProvider;
     mapping(uint256 => Auction) public auctions;
@@ -58,15 +61,15 @@ contract AuctionHouse is Ownable2Step, Pausable, ERC721Holder {
         uint256 startPrice
     ) external onlyOwner {
         if (registry().ownerOf(tokenId) != address(this)) {
-            revert Nope();
+            revert Nope("auction house is not an owner of token");
         }
         if (end <= block.timestamp) {
-            revert Nope();
+            revert InputError("end must be later than now");
         }
         if (auctions[tokenId].end != 0) {
-            revert Nope();
+            revert Nope("auction for that tokenId is already exists");
         }
-        if (end - start < 24 hours) revert Nope();
+        if (end - start < 24 hours) revert InputError("end - start < 24 hours");
         auctions[tokenId] = Auction({
             start: start,
             end: end,
@@ -79,10 +82,11 @@ contract AuctionHouse is Ownable2Step, Pausable, ERC721Holder {
     function placeBid(uint256 id) external payable {
         uint amount = msg.value;
         Auction memory auction = auctions[id];
-        if (auction.start >= block.timestamp) revert Nope();
-        if (auction.end <= block.timestamp) revert Nope();
-        if (amount < auction.startPrice) revert Nope();
-        if (auction.highestBid.amount >= amount) revert Nope();
+        if (auction.end == 0) revert AuctionNotFound(id);
+        if (auction.start >= block.timestamp) revert AuctionNotStarted(auction.start);
+        if (auction.end <= block.timestamp) revert AuctionFinished(auction.end);
+        if (amount < auction.startPrice) revert InputError("bid should be greater than auction start price");
+        if (auction.highestBid.amount >= amount) revert InputError("current bid is greater than yours sent amount");
         Bid memory currentBid = auction.highestBid;
         if (currentBid.bidder != address(0)) {
             payable(currentBid.bidder).transfer(currentBid.amount);
@@ -94,8 +98,8 @@ contract AuctionHouse is Ownable2Step, Pausable, ERC721Holder {
 
     function claim(uint256 id) external {
         Auction memory auction = auctions[id];
-        if (auction.highestBid.bidder != _msgSender()) revert Nope();
-        if (auction.end >= block.timestamp) revert Nope();
+        if (auction.highestBid.bidder != _msgSender()) revert InputError("you're not a highest bidder");
+        if (auction.end >= block.timestamp) revert AuctionNotFinished(auction.end);
         registry().transferFrom(address(this), auction.highestBid.bidder, id);
         payable(addressesProvider.FUNDS_MANAGER()).transfer(
             auction.highestBid.amount
@@ -105,9 +109,9 @@ contract AuctionHouse is Ownable2Step, Pausable, ERC721Holder {
 
     function transferUnclaimed(uint256 id) external onlyOwner {
         Auction memory auction = auctions[id];
-        if (auction.start >= block.timestamp) revert Nope();
-        if (auction.end <= block.timestamp) revert Nope();
-        if (auction.highestBid.bidder != address(0)) revert Nope();
+        if (auction.start >= block.timestamp) revert AuctionNotStarted(auction.start);
+        if (auction.end <= block.timestamp) revert AuctionFinished(auction.end);
+        if (auction.highestBid.bidder != address(0)) revert ZeroAddress("highest bidder");
         registry().transferFrom(address(this), _msgSender(), id);
     }
 }

@@ -12,6 +12,7 @@ import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";
 import {IAddressesProvider} from "./interfaces/IAddressesProvider.sol";
 import {IFundsManager} from "./interfaces/IFundsManager.sol";
 import {IPriceOracle} from "./interfaces/IPriceOracle.sol";
+import {Nope, NotOwner} from "./common/Errors.sol";
 
 import {console} from "hardhat/console.sol";
 
@@ -26,7 +27,7 @@ contract BeranamesRegistry is
     error LeaseTooShort();
     error InsufficientBalance();
     error Exists();
-    error Nope();
+    error Expired(uint expiry);
 
     struct Name {
         bytes32 name;
@@ -124,7 +125,7 @@ contract BeranamesRegistry is
         uint duration
     ) external payable validDuration(duration) {
         bytes32 id = keccak256(abi.encode(chars));
-        if (!minted[id]) revert Nope();
+        if (!minted[id]) revert Nope('name not minted');
         uint expiry = names[uint(id)].expiry;
         if (expiry + GRACE_PERIOD > block.timestamp) {
             uint remainder;
@@ -141,7 +142,7 @@ contract BeranamesRegistry is
             }
             payable(addressesProvider.FUNDS_MANAGER()).transfer(price);
             renewInternal(chars, duration);
-        } else revert Nope();
+        } else revert Nope('name expired');
     }
 
     function renewERC20(
@@ -172,14 +173,14 @@ contract BeranamesRegistry is
             paymentAsset.approve(addressesProvider.FUNDS_MANAGER(), price);
             fundsManager().distributeFunds(paymentAsset, price);
             renewInternal(chars, duration);
-        } else revert Nope();
+        } else revert Expired(expiry + GRACE_PERIOD);
     }
 
     /**  UPDATE NAME */
     function updateWhois(uint id, address aka) external {
         if (_msgSender() == ownerOf(id)) {
             names[id].whois = aka;
-        } else revert Nope();
+        } else revert NotOwner();
     }
 
     function updateMetadataURI(
@@ -188,7 +189,7 @@ contract BeranamesRegistry is
     ) external {
         if (_msgSender() == ownerOf(id)) {
             names[id].metadataURI = metadataURI_;
-        } else revert Nope();
+        } else revert NotOwner();
     }
 
     /** ADMIN */
