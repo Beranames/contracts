@@ -2650,7 +2650,7 @@ interface IStakingModule {
 
 // File contracts/interfaces/IFundsManager.sol
 
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.22;
 
 // Errors
 error ZeroAddress();
@@ -2672,7 +2672,7 @@ interface IFundsManager {
 
     function BERANAMES_WALLET() external view returns (address);
 
-    function BERACHAIN_FOUNDATION_WALLET() external view returns (address);
+    function BERACHAIN_FOUNDATION() external view returns (address);
 
     /**
      * @dev Returns the total amount of assets delegated to the validator.
@@ -2687,12 +2687,12 @@ interface IFundsManager {
      * @param token token to distribute
      * @param amount amount of token to distribute
      */
-    function distributeFunds(IERC20 token, uint256 amount) external;
+    function distributeERC20(IERC20 token, uint256 amount) external;
 }
 
 // File contracts/interfaces/IAddressesProvider.sol
 
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.22;
 
 interface IAddressesProvider {
     function REGISTRY() external view returns (address);
@@ -2705,9 +2705,9 @@ interface IAddressesProvider {
 
     function VALIDATOR() external view returns (address);
 
-    function TEAM_WALLET() external view returns (address);
+    function TEAM() external view returns (address);
 
-    function FOUNDATION_WALLET() external view returns (address);
+    function FOUNDATION() external view returns (address);
 
     // ADMIN ONLY
     function setRegistry(address registry) external;
@@ -2720,14 +2720,14 @@ interface IAddressesProvider {
 
     function setValidator(address validator) external;
 
-    function setTeamWallet(address teamWallet) external;
+    function setTeam(address teamWallet) external;
 
-    function setFoundationWallet(address foundationWallet) external;
+    function setFoundation(address foundationWallet) external;
 }
 
 // File contracts/interfaces/IPriceOracle.sol
 
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.22;
 
 interface IPriceOracle {
     function isEmoji(string calldata s) external view returns (bool);
@@ -7212,7 +7212,7 @@ library console {
 
 // File contracts/Registry.sol
 
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.22;
 
 contract BeranamesRegistry is
     Ownable2Step,
@@ -7309,10 +7309,9 @@ contract BeranamesRegistry is
             duration,
             address(paymentAsset)
         );
-        console.log(price);
         paymentAsset.safeTransferFrom(_msgSender(), address(this), price);
         paymentAsset.approve(addressesProvider.FUNDS_MANAGER(), price);
-        fundsManager().distributeFunds(paymentAsset, price);
+        fundsManager().distributeERC20(paymentAsset, price);
         return mintInternal(chars, duration, whois, metadataURI, to);
     }
 
@@ -7367,7 +7366,7 @@ contract BeranamesRegistry is
             }
             paymentAsset.safeTransferFrom(_msgSender(), address(this), price);
             paymentAsset.approve(addressesProvider.FUNDS_MANAGER(), price);
-            fundsManager().distributeFunds(paymentAsset, price);
+            fundsManager().distributeERC20(paymentAsset, price);
             renewInternal(chars, duration);
         } else revert Nope();
     }

@@ -43,7 +43,11 @@ contract PriceOracle is Ownable2Step {
                 }
             } else {
                 bytes32 encodedMember = keccak256(abi.encode(chars[i]));
-                if (encodedMember == space || encodedMember == empty || encodedMember == fullstop) {
+                if (
+                    encodedMember == space ||
+                    encodedMember == empty ||
+                    encodedMember == fullstop
+                ) {
                     revert Nope();
                 }
             }
@@ -103,13 +107,17 @@ contract PriceOracle is Ownable2Step {
         address asset
     ) internal view returns (uint256 assetPrice) {
         // TODO - fetch real price
-        // AggregatorV3Interface(priceFeeds[asset]).latestRoundData();
-        // (, int256 assetPriceInt, , , ) = AggregatorV3Interface(
-        //     priceFeeds[asset]
-        // ).latestRoundData();
-        // assetPrice = uint256(assetPriceInt);
-        // console.logUint(assetPrice);
-        return 1e18;
+        uint8 decimals = AggregatorV3Interface(priceFeeds[asset]).decimals();
+        (, int256 assetPriceInt, , , ) = AggregatorV3Interface(
+            priceFeeds[asset]
+        ).latestRoundData();
+        assetPrice = uint256(assetPriceInt);
+        if (decimals < 18) {
+            assetPrice *= 10 ** (18 - decimals);
+        } else if (decimals > 18) {
+            assetPrice /= 10 ** (decimals - 18);
+        }
+        // return 1e18;
     }
 
     function setAssetOracle(address asset, address oracle) external onlyOwner {

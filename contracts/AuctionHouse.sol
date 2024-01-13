@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.22;
 pragma abicoder v2;
 
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
@@ -97,9 +97,7 @@ contract AuctionHouse is Ownable2Step, Pausable, ERC721Holder {
         if (auction.highestBid.bidder != _msgSender()) revert Nope();
         if (auction.end >= block.timestamp) revert Nope();
         registry().transferFrom(address(this), auction.highestBid.bidder, id);
-        payable(addressesProvider.FUNDS_MANAGER()).transfer(
-            auction.highestBid.amount
-        );
+        fundsManager().distributeNative{value: auction.highestBid.amount}();
         emit Claimed(id, _msgSender());
     }
 

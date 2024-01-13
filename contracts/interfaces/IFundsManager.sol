@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.22;
 pragma abicoder v2;
 
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-import {IStakingModule} from "./IStaking.sol";
 
 // Errors
 error ZeroAddress();
@@ -15,8 +13,6 @@ error FailedToDelegate();
 error FailedToUndelegate();
 
 interface IFundsManager {
-    function STAKING_MODULE() external view returns (IStakingModule);
-
     function BPS() external view returns (uint16);
 
     function BPS_TO_TEAM() external view returns (uint16);
@@ -27,7 +23,7 @@ interface IFundsManager {
 
     function BERANAMES_WALLET() external view returns (address);
 
-    function BERACHAIN_FOUNDATION_WALLET() external view returns (address);
+    function BERACHAIN_FOUNDATION() external view returns (address);
 
     /**
      * @dev Returns the total amount of assets delegated to the validator.
@@ -42,5 +38,7 @@ interface IFundsManager {
      * @param token token to distribute
      * @param amount amount of token to distribute
      */
-    function distributeFunds(IERC20 token, uint256 amount) external;
+    function distributeERC20(IERC20 token, uint256 amount) external;
+
+    function distributeNative() external payable;
 }

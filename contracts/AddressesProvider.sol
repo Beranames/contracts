@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.22;
 pragma abicoder v2;
 
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
@@ -11,8 +11,9 @@ contract AddressesProvider is Ownable2Step, Multicall {
     address public FUNDS_MANAGER;
     address public AUCTION_HOUSE;
     address public VALIDATOR;
-    address public TEAM_WALLET;
-    address public FOUNDATION_WALLET;
+    address public TEAM;
+    address public FOUNDATION;
+    address public TREASURY;
 
     event Update(string name, address addr);
 
@@ -21,17 +22,17 @@ contract AddressesProvider is Ownable2Step, Multicall {
         address priceOracle,
         address fundsManager,
         address auctionHouse,
-        address validator,
-        address teamWallet,
-        address foundationWallet
+        address team,
+        address foundation,
+        address treasury
     ) {
         REGISTRY = registry;
         PRICE_ORACLE = priceOracle;
         FUNDS_MANAGER = fundsManager;
         AUCTION_HOUSE = auctionHouse;
-        VALIDATOR = validator;
-        TEAM_WALLET = teamWallet;
-        FOUNDATION_WALLET = foundationWallet;
+        TEAM = team;
+        FOUNDATION = foundation;
+        TREASURY = treasury;
     }
 
     function setRegistry(address registry) external onlyOwner {
@@ -54,18 +55,18 @@ contract AddressesProvider is Ownable2Step, Multicall {
         emit Update("AUCTION_HOUSE", auctionHouse);
     }
 
-    function setValidator(address validator) external onlyOwner {
-        VALIDATOR = validator;
-        emit Update("VALIDATOR", validator);
+    function setTeam(address teamWallet) external onlyOwner {
+        TEAM = teamWallet;
+        emit Update("TEAM", teamWallet);
     }
 
-    function setTeamWallet(address teamWallet) external onlyOwner {
-        TEAM_WALLET = teamWallet;
-        emit Update("TEAM_WALLET", teamWallet);
+    function setFoundation(address foundationWallet) external onlyOwner {
+        FOUNDATION = foundationWallet;
+        emit Update("FOUNDATION", foundationWallet);
     }
 
-    function setFoundationWallet(address foundationWallet) external onlyOwner {
-        FOUNDATION_WALLET = foundationWallet;
-        emit Update("FOUNDATION_WALLET", foundationWallet);
+    function setTreasury(address treasury) external onlyOwner {
+        TREASURY = treasury;
+        emit Update("TREASURY", treasury);
     }
 }

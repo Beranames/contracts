@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.22;
 pragma abicoder v2;
 
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
@@ -95,7 +95,7 @@ contract BeranamesRegistry is
         address to
     ) external payable whenNotPaused validDuration(duration) returns (uint) {
         uint price = priceOracle().price(chars, duration, address(0));
-        payable(addressesProvider.FUNDS_MANAGER()).transfer(price);
+        fundsManager().distributeNative{value: price}();
         return mintInternal(chars, duration, whois, metadataURI, to);
     }
 
@@ -112,10 +112,9 @@ contract BeranamesRegistry is
             duration,
             address(paymentAsset)
         );
-        console.log(price);
         paymentAsset.safeTransferFrom(_msgSender(), address(this), price);
         paymentAsset.approve(addressesProvider.FUNDS_MANAGER(), price);
-        fundsManager().distributeFunds(paymentAsset, price);
+        fundsManager().distributeERC20(paymentAsset, price);
         return mintInternal(chars, duration, whois, metadataURI, to);
     }
 
@@ -139,7 +138,7 @@ contract BeranamesRegistry is
             if (remainder > 0) {
                 price -= priceOracle().price(chars, remainder, address(0));
             }
-            payable(addressesProvider.FUNDS_MANAGER()).transfer(price);
+            fundsManager().distributeNative{value: price}();
             renewInternal(chars, duration);
         } else revert Nope();
     }
@@ -170,7 +169,7 @@ contract BeranamesRegistry is
             }
             paymentAsset.safeTransferFrom(_msgSender(), address(this), price);
             paymentAsset.approve(addressesProvider.FUNDS_MANAGER(), price);
-            fundsManager().distributeFunds(paymentAsset, price);
+            fundsManager().distributeERC20(paymentAsset, price);
             renewInternal(chars, duration);
         } else revert Nope();
     }

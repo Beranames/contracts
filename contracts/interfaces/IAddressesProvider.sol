@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.22;
 pragma abicoder v2;
 
 interface IAddressesProvider {
@@ -11,11 +11,11 @@ interface IAddressesProvider {
 
     function AUCTION_HOUSE() external view returns (address);
 
-    function VALIDATOR() external view returns (address);
+    function TEAM() external view returns (address);
 
-    function TEAM_WALLET() external view returns (address);
+    function FOUNDATION() external view returns (address);
 
-    function FOUNDATION_WALLET() external view returns (address);
+    function TREASURY() external view returns (address);
 
     // ADMIN ONLY
     function setRegistry(address registry) external;
@@ -26,9 +26,9 @@ interface IAddressesProvider {
 
     function setAuctionHouse(address auctionHouse) external;
 
-    function setValidator(address validator) external;
+    function setTeam(address team) external;
 
-    function setTeamWallet(address teamWallet) external;
+    function setFoundation(address foundation) external;
 
-    function setFoundationWallet(address foundationWallet) external;
+    function setTreasury(address treasury) external;
 }
