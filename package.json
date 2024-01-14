@@ -1,5 +1,14 @@
 {
   "name": "beranames",
+  "scripts": {
+    "node": "npx hardhat node",
+    "compile": "npx hardhat compile",
+    "test": "REPORT_GAS=true npx hardhat test",
+    "coverage": "npx hardhat coverage",
+    "typechain": "npx hardhat typechain",
+    "lint": "hardhat lint",
+    "deploy": "REPORT_GAS=true npx hardhat run scripts/deploy.ts"
+  },
   "devDependencies": {
     "@chainlink/contracts": "^0.6.1",
     "@openzeppelin/contracts": "^4.8.2",

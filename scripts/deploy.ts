@@ -1,5 +1,5 @@
 import { ethers } from "hardhat";
-import { constants } from "ethers";
+import { constants, BigNumber } from "ethers";
 import getEmojiBatch from "./emojis/getBatchEmojis";
 import {
   AddressesProvider,
@@ -95,6 +95,11 @@ async function main() {
   const auctionHouse = await deployAuctionhouse(addressesProvider.address);
   const fundsManager = await deployFundsManager(addressesProvider.address);
   const registry = await deployRegistry(addressesProvider.address);
+  let teamAddress = process.env.TEAM_ADDRESS || constants.AddressZero;
+  let foundationAddress =
+    process.env.FOUNDATION_ADDRESS || constants.AddressZero;
+  let treasuryAddress = process.env.TREASURY_ADDRESS || constants.AddressZero;
+  let gasUsed = BigNumber.from(0);
   const setAddresses = await addressesProvider.multicall([
     addressesProvider.interface.encodeFunctionData("setPriceOracle", [
       price.address,
@@ -108,8 +113,33 @@ async function main() {
     addressesProvider.interface.encodeFunctionData("setRegistry", [
       registry.address,
     ]),
+    addressesProvider.interface.encodeFunctionData("setTeam", [teamAddress]),
+    addressesProvider.interface.encodeFunctionData("setFoundation", [
+      foundationAddress,
+    ]),
+    addressesProvider.interface.encodeFunctionData("setTreasury", [
+      treasuryAddress,
+    ]),
   ]);
-  // await registry.mintToAuctionHouse([["👍"]]);
+  const setAddressesRx = await setAddresses.wait();
+  gasUsed = gasUsed.add(setAddressesRx.gasUsed);
+  // setup emojis in price oracle and mint singles to auction house
+  const emojiGenerator = getEmojiBatch();
+  while (true) {
+    const batch = emojiGenerator.next();
+    if (batch.done) break;
+    // price oracle
+    const setTx = await price.setEmojis(batch.value);
+    const setRx = await setTx.wait();
+    gasUsed = gasUsed.add(setRx.gasUsed);
+    // mint to auction house
+    const mintTx = await registry.mintToAuctionHouse(
+      batch.value.reduce((a, b) => a.concat([[b]]), [] as Array<Array<string>>)
+    );
+    const mintRx = await mintTx.wait();
+    gasUsed = gasUsed.add(mintRx.gasUsed);
+  }
+  console.log(`GAS USED: ${gasUsed.toString()}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

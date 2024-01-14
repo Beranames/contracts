@@ -1,6 +1,7 @@
 import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
+import { parseEther } from "ethers/lib/utils";
 
 import deployAddressesProviderFixture from "./utils/deployAddressesProvider";
 import deployAuctionHouseFixture from "./utils/deployAuctionHouse";
@@ -132,14 +133,18 @@ describe("AuctionHouse", function () {
           ).to.be.revertedWithCustomError(_auctionHouse, "Nope");
         });
         it("Should revert if contract is not the owner of token", async function () {
-          // await _registry.mintNative(["b", "e", "r", "a"], 1, _owner.address, "", _owner.address, {
-          //     value: parseEther("169"),
-          // });
-          // await createAuction(getTokenId(["b", "e", "r", "a"]));
-          // await expect(createAuction(getTokenId(["b", "e", "r", "a"]))).to.be.revertedWithCustomError(
-          //     _auctionHouse,
-          //     "Nope"
-          // );
+          //   await _registry.mintNative(
+          //     ["b", "e", "r", "a"],
+          //     1,
+          //     _owner.address,
+          //     "",
+          //     _owner.address,
+          //     {
+          //       value: parseEther("169"),
+          //     }
+          //   );
+          //   await expect(createAuction(getTokenId(["b", "e", "r", "a"]))).to.be
+          //     .reverted;
         });
       });
       it("Should create auction", async function () {

@@ -5,7 +5,6 @@ import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {IAddressesProvider} from "./interfaces/IAddressesProvider.sol";
-import "hardhat/console.sol";
 // Errors
 error ZeroAddress();
 error ZeroAmount();
