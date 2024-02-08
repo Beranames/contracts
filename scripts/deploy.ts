@@ -121,17 +121,14 @@ async function main() {
       treasuryAddress,
     ]),
   ]);
+  console.log(`AddressesProvider updated with new addresses`);
   const setAddressesRx = await setAddresses.wait();
   gasUsed = gasUsed.add(setAddressesRx.gasUsed);
-  // setup emojis in price oracle and mint singles to auction house
+  // mint singles to auction house
   const emojiGenerator = getEmojiBatch();
   while (true) {
     const batch = emojiGenerator.next();
     if (batch.done) break;
-    // price oracle
-    const setTx = await price.setEmojis(batch.value);
-    const setRx = await setTx.wait();
-    gasUsed = gasUsed.add(setRx.gasUsed);
     // mint to auction house
     const mintTx = await registry.mintToAuctionHouse(
       batch.value.reduce((a, b) => a.concat([[b]]), [] as Array<Array<string>>)
@@ -139,6 +136,11 @@ async function main() {
     const mintRx = await mintTx.wait();
     gasUsed = gasUsed.add(mintRx.gasUsed);
   }
+  console.log(`Emojis set and minted to auction house`);
+  const unpauseTx = await registry.togglePause();
+  const unpauseRx = await unpauseTx.wait();
+  console.log(`Registry unpaused`);
+  gasUsed = gasUsed.add(unpauseRx.gasUsed);
   console.log(`GAS USED: ${gasUsed.toString()}`);
 }
 

@@ -10,7 +10,6 @@ contract AddressesProvider is Ownable2Step, Multicall {
     address public PRICE_ORACLE;
     address public FUNDS_MANAGER;
     address public AUCTION_HOUSE;
-    address public VALIDATOR;
     address public TEAM;
     address public FOUNDATION;
     address public TREASURY;

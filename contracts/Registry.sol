@@ -8,6 +8,7 @@ import {ERC721Enumerable} from "@openzeppelin/contracts/token/ERC721/extensions/
 import {IERC20, SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Pausable} from "@openzeppelin/contracts/security/Pausable.sol";
 import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";
+import {EnumerableMap} from "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 
 import {IAddressesProvider} from "./interfaces/IAddressesProvider.sol";
 import {IFundsManager} from "./interfaces/IFundsManager.sol";
@@ -22,6 +23,7 @@ contract BeranamesRegistry is
     Multicall
 {
     using SafeERC20 for IERC20;
+    using EnumerableMap for EnumerableMap.UintToUintMap;
     error NoEntity();
     error LeaseTooShort();
     error InsufficientBalance();
@@ -30,6 +32,7 @@ contract BeranamesRegistry is
 
     struct Name {
         bytes32 name;
+        string[] chars;
         uint256 expiry;
         address whois;
         string metadataURI;
@@ -41,9 +44,9 @@ contract BeranamesRegistry is
     IAddressesProvider public addressesProvider;
 
     uint private _count;
-    // mapping(bytes32 => uint256) public nameIds;
     mapping(uint256 => Name) public names; // keccak256(abi.encode(🐻⛓️)) => Name
     mapping(bytes32 => bool) public minted; // keccak256(abi.encode(🐻⛓️)) => true
+    mapping(address => EnumerableMap.UintToUintMap) private _ownedTokens;
 
     constructor(
         IAddressesProvider addressesProvider_
@@ -216,6 +219,7 @@ contract BeranamesRegistry is
         }
         names[id] = Name({
             name: name,
+            chars: chars,
             expiry: block.timestamp + duration * 365 days,
             whois: whois,
             metadataURI: metadataURI
