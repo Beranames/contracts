@@ -48,6 +48,9 @@ contract BeranamesRegistry is
     mapping(bytes32 => bool) public minted; // keccak256(abi.encode(🐻⛓️)) => true
     mapping(address => EnumerableMap.UintToUintMap) private _ownedTokens;
 
+    bool public whitelistEnabled;
+    mapping(address => bool) private _wl;
+
     constructor(
         IAddressesProvider addressesProvider_
     ) ERC721("Beranames", unicode"🐻🪪") {
@@ -60,12 +63,21 @@ contract BeranamesRegistry is
         _;
     }
 
+    modifier onlyWhitelisted() {
+        if (whitelistEnabled && !_wl[_msgSender()]) revert Nope();
+        _;
+    }
+
     function totalSupply() public view override returns (uint256) {
         return _count;
     }
 
     function tokenURI(uint256 id) public view override returns (string memory) {
         return names[id].metadataURI;
+    }
+
+    function chars(uint256 id) public view returns (string[] memory) {
+        return names[id].chars;
     }
 
     function priceOracle() public view returns (IPriceOracle) {
@@ -96,7 +108,14 @@ contract BeranamesRegistry is
         address whois,
         string calldata metadataURI,
         address to
-    ) external payable whenNotPaused validDuration(duration) returns (uint) {
+    )
+        external
+        payable
+        whenNotPaused
+        onlyWhitelisted
+        validDuration(duration)
+        returns (uint)
+    {
         uint price = priceOracle().price(chars, duration, address(0));
         fundsManager().distributeNative{value: price}();
         return mintInternal(chars, duration, whois, metadataURI, to);
@@ -109,7 +128,13 @@ contract BeranamesRegistry is
         string calldata metadataURI,
         address to,
         IERC20 paymentAsset
-    ) external whenNotPaused validDuration(duration) returns (uint) {
+    )
+        external
+        whenNotPaused
+        onlyWhitelisted
+        validDuration(duration)
+        returns (uint)
+    {
         uint price = priceOracle().price(
             chars,
             duration,
@@ -237,5 +262,14 @@ contract BeranamesRegistry is
         bytes32 name = keccak256(abi.encode(chars));
         if (!minted[name]) revert NoEntity();
         names[uint(name)].expiry += duration * 365 days;
+    }
+
+    function setWhitelisted(
+        address[] calldata accounts,
+        bool status
+    ) external onlyOwner {
+        for (uint i = 0; i < accounts.length; i++) {
+            _wl[accounts[i]] = status;
+        }
     }
 }

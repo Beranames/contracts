@@ -201,16 +201,29 @@ async function main() {
   const addressesProvider = addressesProviderFactory.attach(
     "0x089290B77b42CFc52122B9Bc2937BDF49bf61b43"
   );
-  await addressesProvider.setRegistry(
-    "0x76Af6137926599766d90387f857ad4ce56dc6935"
-  );
+  const registryFactory = await ethers.getContractFactory("BeranamesRegistry");
+  let r = await registryFactory.deploy(addressesProvider.address);
+  await r.deployed();
+  console.log(`Registry deployed at: ${r.address}`);
+  let tx = await addressesProvider.setRegistry(r.address);
+  await tx.wait();
+  console.log(`Registry set on addressesProvider`);
+  tx = await r.togglePause();
+  await tx.wait();
+  console.log(`Registry unpaused`);
+  console.log(await r.paused());
+  // await addressesProvider.setRegistry(
+  //   "0x76Af6137926599766d90387f857ad4ce56dc6935"
+  // );
   // await deployRegistry(addressesProvider.address);
 
-  // const registryFactory = await ethers.getContractFactory("BeranamesRegistry");
   // const registry = registryFactory.attach(
-  //   "0xA7B6A8616ed917637356c1C8ef984E663f74737f"
+  //   "0x76Af6137926599766d90387f857ad4ce56dc6935"
   // );
+  // const tx = await registry.togglePause();
+  // await tx.wait();
   // console.log(await registry.paused());
+
   // const priceFactory = await ethers.getContractFactory("PriceOracle");
   // const price = priceFactory.attach(
   //   "0x64F412f821086253204645174c456b7532BA4527"
