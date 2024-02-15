@@ -18,14 +18,14 @@ const config: HardhatUserConfig = {
     ],
   },
   networks: {
-    hardhat: {
-      forking: {
-        url: "https://faucet.0xhoneyjar.xyz/rpc",
-        blockNumber: 112288,
-      },
-      chainId: 80085,
-      // accounts: [process.env.PRIVATE_KEY || ""],
-    },
+    // hardhat: {
+    //   forking: {
+    //     url: "https://faucet.0xhoneyjar.xyz/rpc",
+    //     blockNumber: 112288,
+    //   },
+    //   chainId: 80085,
+    // accounts: [process.env.PRIVATE_KEY || ""],
+    // },
     artio_testnet: {
       url: "https://artio.rpc.berachain.com",
       chainId: 80085,

@@ -43,6 +43,7 @@ function price(chars: Array<string>, duration: bigint) {
     const x = BigInt(i);
     result += (ppy_ * BigInt(110) ** x) / BigInt(100) ** x;
   }
+  console.log(chars, ppy_.toString(), result.toString());
   return result;
 }
 
