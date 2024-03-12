@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.22;
-pragma abicoder v2;
 
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {IERC721, ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
@@ -8,22 +7,15 @@ import {ERC721Enumerable} from "@openzeppelin/contracts/token/ERC721/extensions/
 import {IERC20, SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Pausable} from "@openzeppelin/contracts/security/Pausable.sol";
 import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";
-import {EnumerableMap} from "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import {IAddressesProvider} from "./interfaces/IAddressesProvider.sol";
 import {IFundsManager} from "./interfaces/IFundsManager.sol";
 import {IPriceOracle} from "./interfaces/IPriceOracle.sol";
 
-import {console} from "hardhat/console.sol";
-
-contract BeranamesRegistry is
-    Ownable2Step,
-    Pausable,
-    ERC721Enumerable,
-    Multicall
-{
+contract BeranamesRegistry is Ownable2Step, Pausable, ERC721Enumerable {
     using SafeERC20 for IERC20;
-    using EnumerableMap for EnumerableMap.UintToUintMap;
+    using EnumerableSet for EnumerableSet.UintSet;
     error NoEntity();
     error LeaseTooShort();
     error InsufficientBalance();
@@ -39,6 +31,8 @@ contract BeranamesRegistry is
     }
 
     event Mint(uint256 indexed id, string[] chars, address indexed to);
+    event UpdateWhois(uint256 indexed id, address aka);
+    event UpdateMetadataURI(uint256 indexed id, string metadataURI);
 
     uint256 constant GRACE_PERIOD = 30 days;
     IAddressesProvider public addressesProvider;
@@ -46,7 +40,7 @@ contract BeranamesRegistry is
     uint private _count;
     mapping(uint256 => Name) public names; // keccak256(abi.encode(🐻⛓️)) => Name
     mapping(bytes32 => bool) public minted; // keccak256(abi.encode(🐻⛓️)) => true
-    mapping(address => EnumerableMap.UintToUintMap) private _ownedTokens;
+    mapping(address => EnumerableSet.UintSet) private namesByWhois;
 
     bool public whitelistEnabled;
     mapping(address => bool) private _wl;
@@ -56,6 +50,7 @@ contract BeranamesRegistry is
     ) ERC721("Beranames", unicode"🐻🪪") {
         addressesProvider = addressesProvider_;
         _pause();
+        whitelistEnabled = true;
     }
 
     modifier validDuration(uint duration) {
@@ -66,6 +61,14 @@ contract BeranamesRegistry is
     modifier onlyWhitelisted() {
         if (whitelistEnabled && !_wl[_msgSender()]) revert Nope();
         _;
+    }
+
+    function priceOracle() public view returns (IPriceOracle) {
+        return IPriceOracle(addressesProvider.PRICE_ORACLE());
+    }
+
+    function fundsManager() public view returns (IFundsManager) {
+        return IFundsManager(addressesProvider.FUNDS_MANAGER());
     }
 
     function totalSupply() public view override returns (uint256) {
@@ -80,18 +83,22 @@ contract BeranamesRegistry is
         return names[id].chars;
     }
 
-    function priceOracle() public view returns (IPriceOracle) {
-        return IPriceOracle(addressesProvider.PRICE_ORACLE());
-    }
-
-    function fundsManager() public view returns (IFundsManager) {
-        return IFundsManager(addressesProvider.FUNDS_MANAGER());
+    function reverseLookup(
+        address _whois
+    ) public view returns (string[][] memory) {
+        uint len = namesByWhois[_whois].length();
+        string[][] memory aliases = new string[][](len);
+        for (uint i = 0; i < len; ++i) {
+            aliases[i] = chars(namesByWhois[_whois].at(i));
+        }
+        return aliases;
     }
 
     function mintToAuctionHouse(
         string[][] calldata singleEmojis // [["😀"],["😁"],["😂"], ["🤣"], ...]
     ) external onlyOwner {
-        for (uint i = 0; i < singleEmojis.length; i++) {
+        uint len = singleEmojis.length;
+        for (uint i = 0; i < len; ++i) {
             mintInternal(
                 singleEmojis[i],
                 100,
@@ -103,7 +110,7 @@ contract BeranamesRegistry is
     }
 
     function mintNative(
-        string[] calldata chars,
+        string[] calldata _chars,
         uint256 duration,
         address whois,
         string calldata metadataURI,
@@ -116,13 +123,13 @@ contract BeranamesRegistry is
         validDuration(duration)
         returns (uint)
     {
-        uint price = priceOracle().price(chars, duration, address(0));
+        uint price = priceOracle().price(_chars, duration, address(0));
         fundsManager().distributeNative{value: price}();
-        return mintInternal(chars, duration, whois, metadataURI, to);
+        return mintInternal(_chars, duration, whois, metadataURI, to);
     }
 
     function mintERC20(
-        string[] calldata chars,
+        string[] calldata _chars,
         uint256 duration,
         address whois,
         string calldata metadataURI,
@@ -136,21 +143,21 @@ contract BeranamesRegistry is
         returns (uint)
     {
         uint price = priceOracle().price(
-            chars,
+            _chars,
             duration,
             address(paymentAsset)
         );
         paymentAsset.safeTransferFrom(_msgSender(), address(this), price);
         paymentAsset.approve(addressesProvider.FUNDS_MANAGER(), price);
         fundsManager().distributeERC20(paymentAsset, price);
-        return mintInternal(chars, duration, whois, metadataURI, to);
+        return mintInternal(_chars, duration, whois, metadataURI, to);
     }
 
     function renewNative(
-        string[] calldata chars,
+        string[] calldata _chars,
         uint duration
     ) external payable validDuration(duration) {
-        bytes32 id = keccak256(abi.encode(chars));
+        bytes32 id = keccak256(abi.encode(_chars));
         if (!minted[id]) revert Nope();
         uint expiry = names[uint(id)].expiry;
         if (expiry + GRACE_PERIOD > block.timestamp) {
@@ -159,24 +166,24 @@ contract BeranamesRegistry is
                 remainder = (expiry - block.timestamp) / 365 days;
             }
             uint price = priceOracle().price(
-                chars,
+                _chars,
                 duration + remainder,
                 address(0)
             );
             if (remainder > 0) {
-                price -= priceOracle().price(chars, remainder, address(0));
+                price -= priceOracle().price(_chars, remainder, address(0));
             }
             fundsManager().distributeNative{value: price}();
-            renewInternal(chars, duration);
+            renewInternal(_chars, duration);
         } else revert Nope();
     }
 
     function renewERC20(
-        string[] calldata chars,
+        string[] calldata _chars,
         uint duration,
         IERC20 paymentAsset
     ) external payable validDuration(duration) {
-        bytes32 id = keccak256(abi.encode(chars));
+        bytes32 id = keccak256(abi.encode(_chars));
         uint expiry = names[uint(id)].expiry;
         if (expiry + GRACE_PERIOD > block.timestamp) {
             uint remainder;
@@ -184,13 +191,13 @@ contract BeranamesRegistry is
                 remainder = (expiry - block.timestamp) / 365 days;
             }
             uint price = priceOracle().price(
-                chars,
+                _chars,
                 duration + remainder,
                 address(paymentAsset)
             );
             if (remainder > 0) {
                 price -= priceOracle().price(
-                    chars,
+                    _chars,
                     remainder,
                     address(paymentAsset)
                 );
@@ -198,14 +205,22 @@ contract BeranamesRegistry is
             paymentAsset.safeTransferFrom(_msgSender(), address(this), price);
             paymentAsset.approve(addressesProvider.FUNDS_MANAGER(), price);
             fundsManager().distributeERC20(paymentAsset, price);
-            renewInternal(chars, duration);
+            renewInternal(_chars, duration);
         } else revert Nope();
     }
 
-    /**  UPDATE NAME */
-    function updateWhois(uint id, address aka) external {
+    /**
+     * @notice Update WHOIS for a name
+     */
+    function updateWhois(uint id, address _aka) external {
         if (_msgSender() == ownerOf(id)) {
-            names[id].whois = aka;
+            address currentWhois = names[id].whois;
+            // remove from current whois
+            namesByWhois[currentWhois].remove(id);
+            names[id].whois = _aka;
+            // add to new whois
+            namesByWhois[_aka].add(id);
+            emit UpdateWhois(id, _aka);
         } else revert Nope();
     }
 
@@ -215,6 +230,7 @@ contract BeranamesRegistry is
     ) external {
         if (_msgSender() == ownerOf(id)) {
             names[id].metadataURI = metadataURI_;
+            emit UpdateMetadataURI(id, metadataURI_);
         } else revert Nope();
     }
 
@@ -225,13 +241,13 @@ contract BeranamesRegistry is
 
     /** INTERNAL */
     function mintInternal(
-        string[] memory chars, // ["🐻", "🪪"] || ["o", "o", "g", "a", "b", "o", "o", "g", "a"]
+        string[] memory _chars, // ["🐻", "🪪"] || ["o", "o", "g", "a", "b", "o", "o", "g", "a"]
         uint256 duration, //years
         address whois,
         string memory metadataURI,
         address to
     ) internal validDuration(duration) returns (uint id) {
-        bytes32 name = keccak256(abi.encode(chars));
+        bytes32 name = keccak256(abi.encode(_chars));
         id = uint(name);
         if (minted[name]) {
             if (names[id].expiry > block.timestamp - GRACE_PERIOD) {
@@ -244,31 +260,38 @@ contract BeranamesRegistry is
         }
         names[id] = Name({
             name: name,
-            chars: chars,
+            chars: _chars,
             expiry: block.timestamp + duration * 365 days,
             whois: whois,
             metadataURI: metadataURI
         });
         address owner = to == address(0) ? _msgSender() : to;
-        emit Mint(id, chars, owner);
+        emit Mint(id, _chars, owner);
+        emit UpdateWhois(id, whois);
+        emit UpdateMetadataURI(id, metadataURI);
         _safeMint(owner, id);
         _count++;
     }
 
     function renewInternal(
-        string[] calldata chars,
+        string[] calldata _chars,
         uint duration
     ) internal whenNotPaused validDuration(duration) {
-        bytes32 name = keccak256(abi.encode(chars));
+        bytes32 name = keccak256(abi.encode(_chars));
         if (!minted[name]) revert NoEntity();
         names[uint(name)].expiry += duration * 365 days;
+    }
+
+    function toggleWhitelist() external onlyOwner {
+        whitelistEnabled = !whitelistEnabled;
     }
 
     function setWhitelisted(
         address[] calldata accounts,
         bool status
     ) external onlyOwner {
-        for (uint i = 0; i < accounts.length; i++) {
+        uint len = accounts.length;
+        for (uint i = 0; i < len; ++i) {
             _wl[accounts[i]] = status;
         }
     }

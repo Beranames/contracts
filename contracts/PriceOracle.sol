@@ -1,11 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
-pragma abicoder v2;
+pragma solidity ^0.8.22;
 
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
-
-import "hardhat/console.sol";
 
 contract PriceOracle is Ownable2Step {
     error Nope();
@@ -18,7 +15,8 @@ contract PriceOracle is Ownable2Step {
     }
 
     function setEmojis(string[] calldata emojis) external onlyOwner {
-        for (uint256 i = 0; i < emojis.length; i++) {
+        uint len = emojis.length;
+        for (uint256 i = 0; i < len; ++i) {
             isEmoji[bytes(emojis[i])] = true;
         }
     }
@@ -33,7 +31,8 @@ contract PriceOracle is Ownable2Step {
         bytes32 space = keccak256(abi.encode(" "));
         bytes32 empty = keccak256(abi.encode(""));
         bytes32 fullstop = keccak256(abi.encode("."));
-        for (uint256 i = 0; i < chars.length; i++) {
+        uint len = chars.length;
+        for (uint256 i = 0; i < len; ++i) {
             bytes memory member = bytes(chars[i]);
             if (member.length > 1) {
                 if (isEmoji[member]) {

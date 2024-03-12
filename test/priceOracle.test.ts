@@ -33,6 +33,7 @@ function ppy(chars: Array<string>) {
   } else if (emojiCount > 0) {
     ppy += (ppy * BigInt(25)) / BigInt(100);
   }
+  console.log(chars, ppy.toString());
   return ppy;
 }
 

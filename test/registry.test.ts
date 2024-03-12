@@ -59,6 +59,10 @@ describe("BeranamesRegistry", function () {
       const { registry } = await loadFixture(setupFixture);
       expect(await registry.paused()).to.equal(true);
     });
+    it("Should set the contract to whitelist-mode", async function () {
+      const { registry } = await loadFixture(setupFixture);
+      expect(await registry.whitelistEnabled()).to.equal(true);
+    });
   });
 
   describe("Admin Functions", function () {
@@ -90,12 +94,34 @@ describe("BeranamesRegistry", function () {
       await expect(registry.mintToAuctionHouse([["🐻"], ["😄"], ["🤪"]])).to.not
         .be.reverted;
     });
-    it("Should not allow  non-owners to mint to the auction house", async function () {
+    it("Should not allow non-owners to mint to the auction house", async function () {
       const { registry, otherAccount } = await loadFixture(setupFixture);
       const r = registry.connect(otherAccount);
       await expect(r.mintToAuctionHouse([["🐻‍❄️"]])).to.be.revertedWith(
         "Ownable: caller is not the owner"
       );
+    });
+    it("Should allow the owner to to toggle whitelist", async function () {
+      const { registry, owner } = await loadFixture(setupFixture);
+      await expect(registry.connect(owner).toggleWhitelist()).to.not.be
+        .reverted;
+    });
+    it("Should not allow the non-owners to to toggle whitelist", async function () {
+      const { registry, otherAccount } = await loadFixture(setupFixture);
+      const r = registry.connect(otherAccount);
+      await expect(r.toggleWhitelist()).to.be.reverted;
+    });
+    it("Should allow the owner to set whitelisted addresses", async function () {
+      const { registry, owner, otherAccount } = await loadFixture(setupFixture);
+      await expect(
+        registry.connect(owner).setWhitelisted([otherAccount.address], true)
+      ).to.not.be.reverted;
+    });
+    it("Should not allow the non-owners to set whitelisted addresses", async function () {
+      const { registry, otherAccount } = await loadFixture(setupFixture);
+      const r = registry.connect(otherAccount);
+      await expect(r.setWhitelisted([otherAccount.address], true)).to.be
+        .reverted;
     });
   });
 
@@ -112,12 +138,17 @@ describe("BeranamesRegistry", function () {
       const { registry, manager } = await loadFixture(setupFixture);
       expect(await registry.fundsManager()).to.eq(manager.address);
     });
+    it("Should allow to get whitelisted-mode", async function () {
+      const { registry } = await loadFixture(setupFixture);
+      expect(await registry.whitelistEnabled()).to.not.be.reverted;
+    });
   });
 
   describe("Modifiers", function () {
     it("Should not allow to proceed if duration is invalid", async function () {
       const { registry, owner, erc20 } = await loadFixture(setupFixture);
       await registry.togglePause();
+      await registry.toggleWhitelist();
 
       await expect(
         registry.mintERC20(
@@ -146,10 +177,41 @@ describe("BeranamesRegistry", function () {
           )
         ).to.be.revertedWith("Pausable: paused");
       });
+      it("Should not allow to mint if registry is in whitelist-mode", async function () {
+        const { registry, owner } = await loadFixture(setupFixture);
+        await registry.togglePause();
+        await expect(
+          registry.mintNative(
+            ["o", "o", "g", "a"],
+            1,
+            owner.address,
+            "https://example.com",
+            owner.address
+          )
+        ).to.be.reverted;
+      });
+      it("Should allow to mint if registry is in whitelist-mode and caller is whitelisted", async function () {
+        const { registry, otherAccount } = await loadFixture(setupFixture);
+        await registry.togglePause();
+        await registry.setWhitelisted([otherAccount.address], true);
+        const r = registry.connect(otherAccount);
+        await expect(
+          r.mintNative(
+            ["o", "o", "g", "a"],
+            1,
+            otherAccount.address,
+            "https://example.com",
+            otherAccount.address,
+            {
+              value: parseEther("169"),
+            }
+          )
+        ).to.not.be.reverted;
+      });
       it("Should not allow to mint if call is malformed", async function () {
         const { registry, owner } = await loadFixture(setupFixture);
         await registry.togglePause();
-
+        await registry.toggleWhitelist();
         await expect(
           registry.mintNative(
             ["oo", "g", "a"],
@@ -173,6 +235,7 @@ describe("BeranamesRegistry", function () {
       it("Should not allow to mint if price is not paid", async function () {
         const { registry, owner } = await loadFixture(setupFixture);
         await registry.togglePause();
+        await registry.toggleWhitelist();
         await expect(
           registry.mintNative(
             ["o", "o", "g", "a"],
@@ -189,6 +252,8 @@ describe("BeranamesRegistry", function () {
       it("Should allow to mint if price is paid", async function () {
         const { registry, owner } = await loadFixture(setupFixture);
         await registry.togglePause();
+        await registry.toggleWhitelist();
+
         await expect(
           registry.mintNative(
             ["o", "o", "g", "a"],
@@ -205,6 +270,8 @@ describe("BeranamesRegistry", function () {
       it("Should not-allow to mint if exists", async function () {
         const { registry, owner } = await loadFixture(setupFixture);
         await registry.togglePause();
+        await registry.toggleWhitelist();
+
         await registry.mintNative(
           ["o", "o", "g", "a"],
           1,
@@ -231,6 +298,8 @@ describe("BeranamesRegistry", function () {
       it("Should not allow to mint if within GRACE_PERIOD", async function () {
         const { registry, owner } = await loadFixture(setupFixture);
         await registry.togglePause();
+        await registry.toggleWhitelist();
+
         await registry.mintNative(
           ["o", "o", "g", "a"],
           1,
@@ -258,6 +327,8 @@ describe("BeranamesRegistry", function () {
       it("Should allow to mint if beyond expiry + GRACE_PERIOD", async function () {
         const { registry, owner } = await loadFixture(setupFixture);
         await registry.togglePause();
+        await registry.toggleWhitelist();
+
         await registry.mintNative(
           ["o", "o", "g", "a"],
           1,
@@ -287,6 +358,8 @@ describe("BeranamesRegistry", function () {
       it("Should not allow to renew if beyond GRACE_PERIOD", async function () {
         const { registry, owner } = await loadFixture(setupFixture);
         await registry.togglePause();
+        await registry.toggleWhitelist();
+
         await registry.mintNative(
           ["o", "o", "g", "a"],
           1,
@@ -309,6 +382,8 @@ describe("BeranamesRegistry", function () {
       it("Should allow to renew also if in GRACE_PERIOD", async function () {
         const { registry, owner } = await loadFixture(setupFixture);
         await registry.togglePause();
+        await registry.toggleWhitelist();
+
         await registry.mintNative(
           ["o", "o", "g", "a"],
           1,
@@ -329,6 +404,8 @@ describe("BeranamesRegistry", function () {
       it("Should allow to renew if brefore expiry", async function () {
         const { registry, owner } = await loadFixture(setupFixture);
         await registry.togglePause();
+        await registry.toggleWhitelist();
+
         await registry.mintNative(
           ["o", "o", "g", "a"],
           1,
@@ -375,6 +452,7 @@ describe("BeranamesRegistry", function () {
       it("Should allow to mint ERC20", async function () {
         const { registry, owner, erc20 } = await loadFixture(setupFixture);
         await registry.togglePause();
+        await registry.toggleWhitelist();
 
         await erc20.approve(registry.address, parseEther("169"));
 
@@ -395,6 +473,8 @@ describe("BeranamesRegistry", function () {
       it("Should allow to renew ERC20", async function () {
         const { registry, owner, erc20 } = await loadFixture(setupFixture);
         await registry.togglePause();
+        await registry.toggleWhitelist();
+
         await erc20.approve(registry.address, parseEther("169"));
 
         await registry.mintERC20(
@@ -417,6 +497,8 @@ describe("BeranamesRegistry", function () {
       it("Should correctly apply the pricing curve when renewing ERC20", async function () {
         const { registry, owner, erc20 } = await loadFixture(setupFixture);
         await registry.togglePause();
+        await registry.toggleWhitelist();
+
         await erc20.approve(registry.address, parseEther("50000"));
 
         await registry.mintERC20(
@@ -438,6 +520,8 @@ describe("BeranamesRegistry", function () {
       it("Should not allow to renew if name is not minted", async function () {
         const { registry, erc20 } = await loadFixture(setupFixture);
         await registry.togglePause();
+        await registry.toggleWhitelist();
+
         await erc20.approve(registry.address, parseEther("50000"));
 
         await expect(
@@ -455,6 +539,8 @@ describe("BeranamesRegistry", function () {
         const chars = ["o", "o", "g", "a"];
 
         await registry.togglePause();
+        await registry.toggleWhitelist();
+
         await registry.mintNative(
           chars,
           1,
@@ -480,9 +566,11 @@ describe("BeranamesRegistry", function () {
           setupFixture
         );
 
-        const chars = ["o", "o", "g", "a"];
+        const chars = ["o", "o", "g", "a", "🦆", "🐷"];
 
         await registry.togglePause();
+        await registry.toggleWhitelist();
+
         await registry.mintNative(
           chars,
           1,
@@ -490,7 +578,7 @@ describe("BeranamesRegistry", function () {
           "www.google.com",
           owner.address,
           {
-            value: parseEther("169"),
+            value: parseEther("31.25"),
           }
         );
 
@@ -500,6 +588,14 @@ describe("BeranamesRegistry", function () {
 
         await expect(registry.updateWhois(id, otherAccount.address)).to.not.be
           .reverted;
+        let names = await registry.reverseLookup(otherAccount.address);
+        console.log(names);
+        for (let i = 0; i < names.length; i++) {
+          const name = names[i];
+          for (let j = 0; j < name.length; j++) {
+            expect(name[j]).to.eq(chars[j]);
+          }
+        }
       });
     });
 
@@ -509,6 +605,8 @@ describe("BeranamesRegistry", function () {
 
         const chars = ["o", "o", "g", "a"];
         await registry.togglePause();
+        await registry.toggleWhitelist();
+
         await registry.mintNative(
           chars,
           1,
@@ -535,6 +633,8 @@ describe("BeranamesRegistry", function () {
 
         const chars = ["o", "o", "g", "a"];
         await registry.togglePause();
+        await registry.toggleWhitelist();
+
         await registry.mintNative(
           chars,
           1,

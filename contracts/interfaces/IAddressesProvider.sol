@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.22;
-pragma abicoder v2;
 
 interface IAddressesProvider {
     function REGISTRY() external view returns (address);
