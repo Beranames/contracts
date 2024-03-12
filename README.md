@@ -110,7 +110,7 @@ const registryABI = [
 ];
 
 const id = BigInt(
-  keccak256(defaultAbiCoder.encode(["string[]"], ["b", "e", "r", "a", "1"]))
+  keccak256(defaultAbiCoder.encode(["string[]"], ["b", "e", "r", "a", "🐻‍❄️"]))
 );
 
 const nameData = await readContract(config, {
