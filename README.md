@@ -31,8 +31,29 @@ Beranames is the Name Service for Berachain.
 ```ts
 import { readContract } from "@wagmi/core";
 
-import registryABI from "path/to/abi";
 import config from "path/to/config";
+
+const registryABI = [
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "_whois",
+        type: "address",
+      },
+    ],
+    name: "reverseLookup",
+    outputs: [
+      {
+        internalType: "string[][]",
+        name: "",
+        type: "string[][]",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+];
 
 const namesForAddress = await readContract(config, {
   abi: registryABI,
@@ -49,8 +70,44 @@ const namesForAddress = await readContract(config, {
 import { readContract } from "@wagmi/core";
 import { defaultAbiCoder, keccak256, parseEther } from "ethers/lib/utils";
 
-import registryABI from "path/to/abi";
 import config from "path/to/config";
+
+const registryABI = [
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    name: "names",
+    outputs: [
+      {
+        internalType: "bytes32",
+        name: "name",
+        type: "bytes32",
+      },
+      {
+        internalType: "uint256",
+        name: "expiry",
+        type: "uint256",
+      },
+      {
+        internalType: "address",
+        name: "whois",
+        type: "address",
+      },
+      {
+        internalType: "string",
+        name: "metadataURI",
+        type: "string",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+];
 
 const id = BigInt(
   keccak256(defaultAbiCoder.encode(["string[]"], ["b", "e", "r", "a", "1"]))
