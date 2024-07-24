@@ -26,24 +26,29 @@ const config: HardhatUserConfig = {
     //   chainId: 80085,
     // accounts: [process.env.PRIVATE_KEY || ""],
     // },
-    artio_testnet: {
-      url: "https://artio.rpc.berachain.com",
-      chainId: 80085,
+    // artio_testnet: {
+    //   url: "https://artio.rpc.berachain.com",
+    //   chainId: 80085,
+    //   accounts: [process.env.PRIVATE_KEY || ""],
+    // },
+    bartio_testnet: {
+      url: "https://bartio.rpc.berachain.com/",
+      chainId: 80084,
       accounts: [process.env.PRIVATE_KEY || ""],
-    },
+    }
   },
   etherscan: {
     apiKey: {
-      artio_testnet: "artio_testnet", // apiKey is not required, just set a placeholder
+      bartio_testnet: "bartio_testnet", // apiKey is not required, just set a placeholder
     },
     customChains: [
       {
-        network: "artio_testnet",
-        chainId: 80085,
+        network: "bartio_testnet",
+        chainId: 80084,
         urls: {
           apiURL:
-            "https://api.routescan.io/v2/network/testnet/evm/80085/etherscan",
-          browserURL: "https://artio.beratrail.io",
+            "https://api.routescan.io/v2/network/testnet/evm/80084/etherscan",
+          browserURL: "https://bartio.beratrail.io",
         },
       },
     ],
