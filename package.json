@@ -9,7 +9,7 @@
     "lint": "hardhat lint",
     "deploy:old": "REPORT_GAS=true npx hardhat run scripts/deploy.ts --network localhost",
     "deploy:local": "REPORT_GAS=true npx hardhat run scripts/deploy-bartio.ts --network localhost",
-    "deploy:bartio": "REPORT_GAS=true npx hardhat run scripts/deploy-bartio.ts --network bartio_testnet",
+    "deploy:bartio": "REPORT_GAS=true npx hardhat run scripts/deploy.ts --network bartio_testnet",
     "newAssets:artio": "REPORT_GAS=true npx hardhat run scripts/supportNewAssets.ts --network artio_testnet"
   },
   "devDependencies": {
