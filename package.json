@@ -7,10 +7,9 @@
     "coverage": "npx hardhat coverage",
     "typechain": "npx hardhat typechain",
     "lint": "hardhat lint",
-    "deploy:old": "REPORT_GAS=true npx hardhat run scripts/deploy.ts --network localhost",
     "deploy:local": "REPORT_GAS=true npx hardhat run scripts/deploy-bartio.ts --network localhost",
-    "deploy:bartio": "REPORT_GAS=true npx hardhat run scripts/deploy.ts --network bartio_testnet",
-    "newAssets:artio": "REPORT_GAS=true npx hardhat run scripts/supportNewAssets.ts --network artio_testnet"
+    "deploy:bartio": "REPORT_GAS=true npx hardhat run scripts/deploy-bartio.ts --network bartio_testnet",
+    "verify:bartio": "npx hardhat run scripts/verify.ts --network bartio_testnet"
   },
   "devDependencies": {
     "@chainlink/contracts": "^0.6.1",
@@ -35,6 +34,5 @@
     "typechain": "^8.1.0",
     "typescript": "^5.0.4"
   },
-  "dependencies": {},
-  "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610"
+  "packageManager": "yarn@4.3.1"
 }

@@ -3,10 +3,16 @@ import { AbiCoder, defaultAbiCoder } from "ethers/lib/utils";
 import hre from "hardhat";
 import { constants } from "ethers";
 
+const ADDRESSES_PROVIDER_ADDRESS = '0x75B66beE0e22bA5B9a381a988c5567bAfEC2A37b';
+const PRICE_ORACLE_ADDRESS = '0x8EFA8b8Af06A7183134AD8C66Fc2B0D7C1fe6B41';
+const AUCTION_HOUSE_ADDRESS = '0x6E4Bd3cEb3F74b0e75Fa9a4B6aF46bF90327b8A2';
+const FUNDS_MANAGER_ADDRESS = '0xf8FC1Af1F1C70Eff84cB1076FF0B079282F767dd';
+const REGISTRY_ADDRESS = '0x85998BdFa1A1b49044C1780B543Bc42190B0cC4c';
+
 const verifyContracts = async () => {
   // verify AddressesProvider
   await hre.run("verify:verify", {
-    address: "0x089290B77b42CFc52122B9Bc2937BDF49bf61b43",
+    address: ADDRESSES_PROVIDER_ADDRESS,
     constructorArguments: [
       constants.AddressZero, // registry
       constants.AddressZero, // priceOracle
@@ -19,23 +25,23 @@ const verifyContracts = async () => {
   });
   // verify PriceOracle
   await hre.run("verify:verify", {
-    address: "0x64F412f821086253204645174c456b7532BA4527",
+    address: PRICE_ORACLE_ADDRESS,
     constructorArguments: [],
   });
   // verify AuctionHouse
   await hre.run("verify:verify", {
-    address: "0x467b99e285ee5422eD456F7B26F6F28e0a4372e1",
-    constructorArguments: ["0x089290B77b42CFc52122B9Bc2937BDF49bf61b43"],
+    address: AUCTION_HOUSE_ADDRESS,
+    constructorArguments: [ADDRESSES_PROVIDER_ADDRESS],
   });
   // verify FundsManager
   await hre.run("verify:verify", {
-    address: "0xF38340147C6c4C7Af9aC167630200ab964A5a9dA",
-    constructorArguments: ["0x089290B77b42CFc52122B9Bc2937BDF49bf61b43"],
+    address: FUNDS_MANAGER_ADDRESS,
+    constructorArguments: [ADDRESSES_PROVIDER_ADDRESS],
   });
   // verify BeranamesRegistry
   await hre.run("verify:verify", {
-    address: "0xA7B6A8616ed917637356c1C8ef984E663f74737f",
-    constructorArguments: ["0x089290B77b42CFc52122B9Bc2937BDF49bf61b43"],
+    address: REGISTRY_ADDRESS,
+    constructorArguments: [ADDRESSES_PROVIDER_ADDRESS],
   });
 };
 

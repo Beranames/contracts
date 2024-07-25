@@ -7,7 +7,7 @@ import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/Ag
 contract PriceOracle is Ownable2Step {
     error Nope();
     mapping(bytes => bool) public isEmoji;
-    mapping(address => address) public priceFeeds; // asset => priceFeed
+    mapping(address => address) public priceFeeds; // asset => priceFeed. honey => priceFeed. bera => priceFeed
 
     constructor() {
         isEmoji[unicode"🐻"] = true;
@@ -106,6 +106,7 @@ contract PriceOracle is Ownable2Step {
         address asset
     ) internal view returns (uint256 assetPrice) {
         // TODO - fetch real price
+        require(priceFeeds[asset] != address(0), "Price feed not found");
         uint8 decimals = AggregatorV3Interface(priceFeeds[asset]).decimals();
         (, int256 assetPriceInt, , , ) = AggregatorV3Interface(
             priceFeeds[asset]
