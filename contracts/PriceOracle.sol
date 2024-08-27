@@ -7,7 +7,6 @@ import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/Ag
 contract PriceOracle is Ownable2Step {
     error Nope();
     mapping(bytes => bool) public isEmoji;
-    mapping(address => address) public priceFeeds; // asset => priceFeed. honey => priceFeed. bera => priceFeed
 
     constructor() {
         isEmoji[unicode"🐻"] = true;
@@ -19,6 +18,47 @@ contract PriceOracle is Ownable2Step {
         for (uint256 i = 0; i < len; ++i) {
             isEmoji[bytes(emojis[i])] = true;
         }
+    }
+
+    // In bartio, we have a BERA price and a discount on the yearly plan for more than one year
+    function price(
+        string[] calldata name,
+        uint duration
+    ) external view returns (uint256 amount) {
+        uint beraPerYear_ = beraPerYear(name);
+        if (duration == 2) {
+            beraPerYear_ = beraPerYear_ * 95 / 100; // 5% discount
+        } else if (duration == 3) {
+            beraPerYear_ = beraPerYear_ * 85 / 100; // 15% discount
+        } else if (duration == 4) {
+            beraPerYear_ = beraPerYear_ * 70 / 100; // 30% discount
+        } else if (duration >= 5) {
+            beraPerYear_ = beraPerYear_ * 60 / 100; // 40% discount
+        }
+        return beraPerYear_ * duration;
+    }
+
+    function beraPerYear(
+        string[] calldata chars
+    ) public view returns (uint256 amount) {
+        uint emojis = countEmojisAndCheckForInvalidCharacters(chars);
+        if (chars.length == 1 && emojis == 1) {
+            revert Nope();
+        }
+
+        if (chars.length == 1) {
+            amount = 16;
+        } else if (chars.length == 2) {
+            amount = 8;
+        } else if (chars.length == 3) {
+            amount = 4;
+        } else if (chars.length == 4) {
+            amount = 2;
+        } else {
+            amount = 1;
+        }
+        
+        return amount;
     }
 
     /**
@@ -52,76 +92,5 @@ contract PriceOracle is Ownable2Step {
                 }
             }
         }
-    }
-
-    function dollarPriceForNamePerYear(
-        string[] calldata chars
-    ) public view returns (uint256 amount) {
-        uint emojis = countEmojisAndCheckForInvalidCharacters(chars);
-        if (chars.length == 1) {
-            amount = 999;
-        } else if (chars.length == 2) {
-            amount = 690;
-        } else if (chars.length == 3) {
-            amount = 420;
-        } else if (chars.length == 4) {
-            amount = 169;
-        } else {
-            amount = 25;
-        }
-        amount *= 1e18;
-        // cannot mint single emojis on your own
-        if (chars.length == 1 && emojis == 1) {
-            revert Nope();
-        }
-        if (chars.length == emojis) {
-            amount += (amount * 69) / 100;
-        } else if (emojis > 0) {
-            amount += (amount * 25) / 100;
-        }
-    }
-
-    function price(
-        string[] calldata name,
-        uint duration,
-        address asset
-    ) external view returns (uint256 amount) {
-        uint assetPrice = _fetchAssetPrice(asset); // X base 1e18
-        uint namePricePerYear = dollarPriceForNamePerYear(name); // Y base 1e18
-        if (duration == 1) {
-            amount = ((namePricePerYear * 1e18) / assetPrice);
-        } else {
-            amount = ((namePricePerYear * 1e18) / assetPrice);
-            for (uint i = 2; i <= duration; ++i) {
-                amount += (namePricePerYear * 110 ** i) / 100 ** i;
-            }
-        }
-    }
-
-    /**
-     * @notice Fetch the price of an asset in USD
-     * @param asset - The address of the asset
-     * @return assetPrice price of the asset in USD (18 decimals)
-     */
-    function _fetchAssetPrice(
-        address asset
-    ) internal view returns (uint256 assetPrice) {
-        // TODO - fetch real price
-        require(priceFeeds[asset] != address(0), "Price feed not found");
-        uint8 decimals = AggregatorV3Interface(priceFeeds[asset]).decimals();
-        (, int256 assetPriceInt, , , ) = AggregatorV3Interface(
-            priceFeeds[asset]
-        ).latestRoundData();
-        assetPrice = uint256(assetPriceInt);
-        if (decimals < 18) {
-            assetPrice *= 10 ** (18 - decimals);
-        } else if (decimals > 18) {
-            assetPrice /= 10 ** (decimals - 18);
-        }
-        // return 1e18;
-    }
-
-    function setAssetOracle(address asset, address oracle) external onlyOwner {
-        priceFeeds[asset] = oracle;
     }
 }

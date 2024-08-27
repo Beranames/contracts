@@ -4,7 +4,6 @@ pragma solidity ^0.8.22;
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {IERC721, ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {ERC721Enumerable} from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import {IERC20, SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Pausable} from "@openzeppelin/contracts/security/Pausable.sol";
 import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
@@ -14,7 +13,6 @@ import {IFundsManager} from "./interfaces/IFundsManager.sol";
 import {IPriceOracle} from "./interfaces/IPriceOracle.sol";
 
 contract BeranamesRegistry is Ownable2Step, Pausable, ERC721Enumerable {
-    using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.UintSet;
     error NoEntity();
     error LeaseTooShort();
@@ -118,35 +116,38 @@ contract BeranamesRegistry is Ownable2Step, Pausable, ERC721Enumerable {
         validDuration(duration)
         returns (uint)
     {
-        uint price = priceOracle().price(_chars, duration, address(0));
+        uint price = priceOracle().price(_chars, duration);
         fundsManager().distributeNative{value: price}();
         return mintInternal(_chars, duration, whois, metadataURI, to);
     }
 
-    function mintERC20(
-        string[] calldata _chars,
-        uint256 duration,
-        address whois,
-        string calldata metadataURI,
-        address to,
-        IERC20 paymentAsset
-    )
-        external
-        whenNotPaused
-        onlyWhitelisted
-        validDuration(duration)
-        returns (uint)
-    {
-        uint price = priceOracle().price(
-            _chars,
-            duration,
-            address(paymentAsset)
-        );
-        paymentAsset.safeTransferFrom(_msgSender(), address(this), price);
-        paymentAsset.approve(addressesProvider.FUNDS_MANAGER(), price);
-        fundsManager().distributeERC20(paymentAsset, price);
-        return mintInternal(_chars, duration, whois, metadataURI, to);
-    }
+    /**
+     * @dev In bArtio, only BERA payments
+     */
+    // function mintERC20(
+    //     string[] calldata _chars,
+    //     uint256 duration,
+    //     address whois,
+    //     string calldata metadataURI,
+    //     address to,
+    //     IERC20 paymentAsset
+    // )
+    //     external
+    //     whenNotPaused
+    //     onlyWhitelisted
+    //     validDuration(duration)
+    //     returns (uint)
+    // {
+    //     uint price = priceOracle().price(
+    //         _chars,
+    //         duration,
+    //         address(paymentAsset)
+    //     );
+    //     paymentAsset.safeTransferFrom(_msgSender(), address(this), price);
+    //     paymentAsset.approve(addressesProvider.FUNDS_MANAGER(), price);
+    //     fundsManager().distributeERC20(paymentAsset, price);
+    //     return mintInternal(_chars, duration, whois, metadataURI, to);
+    // }
 
     function renewNative(
         string[] calldata _chars,
@@ -162,47 +163,49 @@ contract BeranamesRegistry is Ownable2Step, Pausable, ERC721Enumerable {
             }
             uint price = priceOracle().price(
                 _chars,
-                duration + remainder,
-                address(0)
+                duration + remainder
             );
             if (remainder > 0) {
-                price -= priceOracle().price(_chars, remainder, address(0));
+                price -= priceOracle().price(_chars, remainder);
             }
             fundsManager().distributeNative{value: price}();
             renewInternal(_chars, duration);
         } else revert Nope();
     }
 
-    function renewERC20(
-        string[] calldata _chars,
-        uint duration,
-        IERC20 paymentAsset
-    ) external payable validDuration(duration) {
-        bytes32 id = bytes32FromChars(_chars);
-        uint expiry = names[uint(id)].expiry;
-        if (expiry + GRACE_PERIOD > block.timestamp) {
-            uint remainder;
-            if (expiry > block.timestamp) {
-                remainder = (expiry - block.timestamp) / 365 days;
-            }
-            uint price = priceOracle().price(
-                _chars,
-                duration + remainder,
-                address(paymentAsset)
-            );
-            if (remainder > 0) {
-                price -= priceOracle().price(
-                    _chars,
-                    remainder,
-                    address(paymentAsset)
-                );
-            }
-            paymentAsset.safeTransferFrom(_msgSender(), address(this), price);
-            paymentAsset.approve(addressesProvider.FUNDS_MANAGER(), price);
-            fundsManager().distributeERC20(paymentAsset, price);
-            renewInternal(_chars, duration);
-        } else revert Nope();
-    }
+    /**
+     * @dev In bArtio, only BERA payments
+     */
+    // function renewERC20(
+    //     string[] calldata _chars,
+    //     uint duration,
+    //     IERC20 paymentAsset
+    // ) external payable validDuration(duration) {
+    //     bytes32 id = bytes32FromChars(_chars);
+    //     uint expiry = names[uint(id)].expiry;
+    //     if (expiry + GRACE_PERIOD > block.timestamp) {
+    //         uint remainder;
+    //         if (expiry > block.timestamp) {
+    //             remainder = (expiry - block.timestamp) / 365 days;
+    //         }
+    //         uint price = priceOracle().price(
+    //             _chars,
+    //             duration + remainder,
+    //             address(paymentAsset)
+    //         );
+    //         if (remainder > 0) {
+    //             price -= priceOracle().price(
+    //                 _chars,
+    //                 remainder,
+    //                 address(paymentAsset)
+    //             );
+    //         }
+    //         paymentAsset.safeTransferFrom(_msgSender(), address(this), price);
+    //         paymentAsset.approve(addressesProvider.FUNDS_MANAGER(), price);
+    //         fundsManager().distributeERC20(paymentAsset, price);
+    //         renewInternal(_chars, duration);
+    //     } else revert Nope();
+    // }
 
     /**
      * @notice Update WHOIS for a name

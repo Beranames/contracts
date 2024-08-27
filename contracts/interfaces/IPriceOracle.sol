@@ -14,12 +14,9 @@ interface IPriceOracle {
 
     function price(
         string[] calldata chars,
-        uint duration,
-        address asset
+        uint duration
     ) external view returns (uint256);
 
     // ADMIN ONLY
     function setEmojis(string[] calldata emojis) external;
-
-    function setAssetOracle(address asset, address oracle) external;
 }

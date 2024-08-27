@@ -16,7 +16,6 @@ async function deployPriceOracle() {
     if (batch.done) break;
     await oracle.setEmojis(batch.value);
   }
-  await oracle.setAssetOracle(constants.AddressZero, agg1.address);
 
   return {
     oracle,
