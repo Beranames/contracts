@@ -166,8 +166,6 @@ const setEmojisOnPriceAndmintToAuctionHouse = async (
 };
 
 async function main() {
-  const signers = await ethers.getSigners();
-  const balanceBefore = await ethers.provider.getBalance(signers[0].address);
   const addressesProvider = await deployAddressesProvider();
   const price = await deployPriceOracle();
   const auctionHouse = await deployAuctionhouse(addressesProvider.address);
@@ -208,6 +206,7 @@ async function main() {
 
   // mint singles to auction house
   const emojiGenerator = getEmojiBatch();
+  let emojiCount = 0;
   while (true) {
     const batch = emojiGenerator.next();
     if (batch.done) break;
@@ -217,11 +216,16 @@ async function main() {
     );
     const mintRx = await mintTx.wait();
     gasUsed = gasUsed.add(mintRx.gasUsed);
+    emojiCount += batch.value.length;
   }
-  console.log(`Emojis set and minted to auction house`);
+  console.log(`${emojiCount} emojis set and minted to auction house`);
   const unpauseTx = await registry.togglePause();
   const unpauseRx = await unpauseTx.wait();
-  console.log(`Registry unpaused`);
+
+  const toggleWhitelistTx = await registry.toggleWhitelist();
+  const toggleWhitelistRx = await toggleWhitelistTx.wait();
+
+  console.log(`Registry unpaused and whitelist disabled`);
   gasUsed = gasUsed.add(unpauseRx.gasUsed);
   console.log(`GAS USED: ${gasUsed.toString()}`);
 }

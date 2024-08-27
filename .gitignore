@@ -11,3 +11,4 @@ artifacts
 
 # Yarn files
 .yarn/
+scripts/emojis/check.ts
