@@ -23,11 +23,11 @@ contract BeranamesRegistry is Ownable2Step, Pausable, ERC721Enumerable {
     error Nope();
 
     struct Name {
-        bytes32 name;
-        string[] chars;
-        uint256 expiry;
-        address whois;
-        string metadataURI;
+        bytes32 name; // 0xf4fe277353fc5244a8efe452f368cac53d8d6a324aebf562e8f42899c0c325ff
+        string[] chars; // ['l', 'o', '🐻']
+        uint256 expiry; // time elapsed from 1970
+        address whois; // owner
+        string metadataURI; // ipfs://something
     }
 
     event Mint(uint256 indexed id, string[] chars, address indexed to);
@@ -37,12 +37,11 @@ contract BeranamesRegistry is Ownable2Step, Pausable, ERC721Enumerable {
     uint256 constant GRACE_PERIOD = 30 days;
     IAddressesProvider public addressesProvider;
 
-    uint private _count;
-    mapping(uint256 => Name) public names; // keccak256(abi.encode(🐻⛓️)) => Name
-    mapping(bytes32 => bool) public minted; // keccak256(abi.encode(🐻⛓️)) => true
-    mapping(address => EnumerableSet.UintSet) private namesByWhois;
+    mapping(uint256 => Name) public names; // uintIdOf(['l', 'o', '🐻']) => Name
+    mapping(bytes32 => bool) public minted; // bytes32Of(['l', 'o', '🐻']) => true
+    mapping(address => EnumerableSet.UintSet) private namesByWhois; // (0x001 => [['l', 'o', '🐻'], ['l', 'o']])
 
-    bool public whitelistEnabled;
+    bool public whitelistEnabled; // set to true at deployment
     mapping(address => bool) private _wl;
 
     constructor(
@@ -69,10 +68,6 @@ contract BeranamesRegistry is Ownable2Step, Pausable, ERC721Enumerable {
 
     function fundsManager() public view returns (IFundsManager) {
         return IFundsManager(addressesProvider.FUNDS_MANAGER());
-    }
-
-    function totalSupply() public view override returns (uint256) {
-        return _count;
     }
 
     function tokenURI(uint256 id) public view override returns (string memory) {
@@ -157,7 +152,7 @@ contract BeranamesRegistry is Ownable2Step, Pausable, ERC721Enumerable {
         string[] calldata _chars,
         uint duration
     ) external payable validDuration(duration) {
-        bytes32 id = keccak256(abi.encode(_chars));
+        bytes32 id = bytes32FromChars(_chars);
         if (!minted[id]) revert Nope();
         uint expiry = names[uint(id)].expiry;
         if (expiry + GRACE_PERIOD > block.timestamp) {
@@ -183,7 +178,7 @@ contract BeranamesRegistry is Ownable2Step, Pausable, ERC721Enumerable {
         uint duration,
         IERC20 paymentAsset
     ) external payable validDuration(duration) {
-        bytes32 id = keccak256(abi.encode(_chars));
+        bytes32 id = bytes32FromChars(_chars);
         uint expiry = names[uint(id)].expiry;
         if (expiry + GRACE_PERIOD > block.timestamp) {
             uint remainder;
@@ -247,7 +242,7 @@ contract BeranamesRegistry is Ownable2Step, Pausable, ERC721Enumerable {
         string memory metadataURI,
         address to
     ) internal validDuration(duration) returns (uint id) {
-        bytes32 name = keccak256(abi.encode(_chars));
+        bytes32 name = bytes32FromChars(_chars);
         id = uint(name);
         if (minted[name]) {
             if (names[id].expiry > block.timestamp - GRACE_PERIOD) {
@@ -270,14 +265,13 @@ contract BeranamesRegistry is Ownable2Step, Pausable, ERC721Enumerable {
         emit UpdateWhois(id, whois);
         emit UpdateMetadataURI(id, metadataURI);
         _safeMint(owner, id);
-        _count++;
     }
 
     function renewInternal(
         string[] calldata _chars,
         uint duration
     ) internal whenNotPaused validDuration(duration) {
-        bytes32 name = keccak256(abi.encode(_chars));
+        bytes32 name = bytes32FromChars(_chars);
         if (!minted[name]) revert NoEntity();
         names[uint(name)].expiry += duration * 365 days;
     }
@@ -294,5 +288,11 @@ contract BeranamesRegistry is Ownable2Step, Pausable, ERC721Enumerable {
         for (uint i = 0; i < len; ++i) {
             _wl[accounts[i]] = status;
         }
+    }
+
+    function bytes32FromChars(
+        string[] memory _chars
+    ) internal pure returns (bytes32) {
+        return keccak256(abi.encode(_chars));
     }
 }

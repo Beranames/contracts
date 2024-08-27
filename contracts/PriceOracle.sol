@@ -28,6 +28,7 @@ contract PriceOracle is Ownable2Step {
     function countEmojisAndCheckForInvalidCharacters(
         string[] calldata chars
     ) public view returns (uint256 emojis) {
+        // CAN BE CONSTANT
         bytes32 space = keccak256(abi.encode(" "));
         bytes32 empty = keccak256(abi.encode(""));
         bytes32 fullstop = keccak256(abi.encode("."));
