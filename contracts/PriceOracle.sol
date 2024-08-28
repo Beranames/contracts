@@ -25,20 +25,20 @@ contract PriceOracle is Ownable2Step {
         string[] calldata name,
         uint duration
     ) external view returns (uint256 amount) {
-        uint beraPerYear_ = beraPerYear(name);
+        uint weiPerYear_ = weiPerYear(name);
         if (duration == 2) {
-            beraPerYear_ = beraPerYear_ * 95 / 100; // 5% discount
+            weiPerYear_ = weiPerYear_ * 95 / 100; // 5% discount
         } else if (duration == 3) {
-            beraPerYear_ = beraPerYear_ * 85 / 100; // 15% discount
+            weiPerYear_ = weiPerYear_ * 85 / 100; // 15% discount
         } else if (duration == 4) {
-            beraPerYear_ = beraPerYear_ * 70 / 100; // 30% discount
+            weiPerYear_ = weiPerYear_ * 70 / 100; // 30% discount
         } else if (duration >= 5) {
-            beraPerYear_ = beraPerYear_ * 60 / 100; // 40% discount
+            weiPerYear_ = weiPerYear_ * 60 / 100; // 40% discount
         }
-        return beraPerYear_ * duration;
+        return weiPerYear_ * duration;
     }
 
-    function beraPerYear(
+    function weiPerYear(
         string[] calldata chars
     ) public view returns (uint256 amount) {
         uint emojis = countEmojisAndCheckForInvalidCharacters(chars);
@@ -58,7 +58,7 @@ contract PriceOracle is Ownable2Step {
             amount = 1;
         }
         
-        return amount;
+        return amount * 1e18;
     }
 
     /**

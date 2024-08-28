@@ -12,19 +12,19 @@ function ppy(chars: Array<string>) {
   let ppy: bigint;
   switch (chars.length) {
     case 1:
-      ppy = BigInt(16);
+      ppy = BigInt(16 * 1e18);
       break;
     case 2:
-      ppy = BigInt(8);
+      ppy = BigInt(8 * 1e18);
       break;
     case 3:
-      ppy = BigInt(4);
+      ppy = BigInt(4 * 1e18);
       break;
     case 4:
-      ppy = BigInt(2);
+      ppy = BigInt(2 * 1e18);
       break;
     default:
-      ppy = BigInt(1);
+      ppy = BigInt(1 * 1e18);
       break;
   }
   console.log(chars, ppy.toString());

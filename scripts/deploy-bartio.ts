@@ -11,8 +11,6 @@ import {
 } from "../typechain-types";
 import { formatEther, parseEther } from "ethers/lib/utils";
 
-const HONEY_ADDRESS = '0x0E4aaF1351de4c0264C5c7056Ef3777b41BD8e03'
-
 const deployAddressesProvider = async (): Promise<AddressesProvider> => {
   const addressesProviderFactory = await ethers.getContractFactory(
     "AddressesProvider"
@@ -121,48 +119,6 @@ const deployRegistry = async (
     (registry as unknown as { address: string }).address
   );
   return registry;
-};
-
-const setEmojisOnPriceAndmintToAuctionHouse = async (
-  price: PriceOracle,
-  registry: BeranamesRegistry,
-  startBatch: number
-) => {
-  const emojiGenerator = getEmojiBatch();
-  let batchNumber = 1;
-  while (true) {
-    if (batchNumber < startBatch) {
-      batchNumber++;
-      continue;
-    }
-    const batch = emojiGenerator.next();
-    if (batch.done) break;
-    // set emojis
-    const px = await price.setEmojis(batch.value);
-    await px.wait();
-    console.log(`Batch ${batchNumber} correclty set on price oracle`);
-    // mint to auction house
-    // try {
-    //   await registry.mintToAuctionHouse(
-    //     batch.value.reduce(
-    //       (a, b) => a.concat([[b]]),
-    //       [] as Array<Array<string>>
-    //     )
-    //   );
-    // } catch (e) {
-    //   console.log(`Batch ${batchNumber} failed to mint to auction house`);
-    //   console.log(e);
-
-    //   const errExists = registry.interface.getSighash("Exists()");
-    //   console.log(errExists);
-    //   // registry.interface.decodeErrorResult(e.data);
-    //   return;
-    // }
-
-    console.log(`Batch ${batchNumber} correclty minted to auction house`);
-    batchNumber++;
-  }
-  console.log(`Emojis minted to auction house`);
 };
 
 async function main() {
