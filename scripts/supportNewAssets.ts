@@ -36,7 +36,7 @@ const main = async () => {
 
   const priceFactory = await ethers.getContractFactory("PriceOracle");
   const price = priceFactory.attach(
-    "0x64F412f821086253204645174c456b7532BA4527"
+    "0x3b872E5DEE3cD8186E1F304514D1dc6Ac34d5d54" // price oracle address
   );
 
   // 1 BERA = 69420.00 USD
@@ -51,11 +51,12 @@ const main = async () => {
     parseEther("100")
   );
 
-  await price.setAssetOracle(constants.AddressZero, aggregatorBERA.address);
-  await price.setAssetOracle(
-    "0x7EeCA4205fF31f947EdBd49195a7A88E6A91161B",
-    aggregatorHONEY.address
-  );
+  // await price.setAssetOracle(constants.AddressZero, aggregatorBERA.address);
+  // await price.setAssetOracle(
+  //   "0x7EeCA4205fF31f947EdBd49195a7A88E6A91161B", // HONEY address
+  //   // or 0x0E4aaF1351de4c0264C5c7056Ef3777b41BD8e03 https://bartio.beratrail.io/token/0x0E4aaF1351de4c0264C5c7056Ef3777b41BD8e03?chainid=80084
+  //   aggregatorHONEY.address
+  // );
 };
 
 main()

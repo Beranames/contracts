@@ -15,8 +15,8 @@ contract FundsManager is Ownable2Step {
     IAddressesProvider public addressesProvider;
 
     uint16 public constant BPS = 10_000;
-    uint16 public constant BPS_TO_TEAM = 1_500;
-    uint16 public constant BPS_TO_FOUNDATION = 8_000;
+    uint16 public constant BPS_TO_TEAM = 0;
+    uint16 public constant BPS_TO_FOUNDATION = 0;
 
     event Success(bool indexed success);
     event Data(bytes data);

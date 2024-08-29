@@ -122,3 +122,10 @@ const nameData = await readContract(config, {
 
 // nameData will include `whois`
 ```
+
+yarn install
+npx hardhat node
+
+new tab
+yarn test
+yarn deploy:old

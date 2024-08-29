@@ -67,7 +67,7 @@ const deployPriceOracle = async (): Promise<PriceOracle> => {
     parseEther("69.420")
   );
 
-  await priceOracle.setAssetOracle(constants.AddressZero, aggregator1.address);
+  // await priceOracle.setAssetOracle(constants.AddressZero, aggregator1.address);
   return priceOracle;
 };
 
