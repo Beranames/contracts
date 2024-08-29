@@ -12,26 +12,20 @@ function ppy(chars: Array<string>) {
   let ppy: bigint;
   switch (chars.length) {
     case 1:
-      ppy = BigInt(999);
+      ppy = BigInt(16 * 1e18);
       break;
     case 2:
-      ppy = BigInt(690);
+      ppy = BigInt(8 * 1e18);
       break;
     case 3:
-      ppy = BigInt(420);
+      ppy = BigInt(4 * 1e18);
       break;
     case 4:
-      ppy = BigInt(169);
+      ppy = BigInt(2 * 1e18);
       break;
     default:
-      ppy = BigInt(25);
+      ppy = BigInt(1 * 1e18);
       break;
-  }
-  ppy *= BigInt(1e18);
-  if (chars.length == emojiCount) {
-    ppy += (ppy * BigInt(69)) / BigInt(100);
-  } else if (emojiCount > 0) {
-    ppy += (ppy * BigInt(25)) / BigInt(100);
   }
   console.log(chars, ppy.toString());
   return ppy;
@@ -40,12 +34,26 @@ function ppy(chars: Array<string>) {
 function price(chars: Array<string>, duration: bigint) {
   const ppy_ = ppy(chars);
   let result = ppy_;
-  for (let i = 2; i <= Number(duration); ++i) {
-    const x = BigInt(i);
-    result += (ppy_ * BigInt(110) ** x) / BigInt(100) ** x;
+  let ppy_discounted: bigint 
+  ppy_discounted = ppy_
+  switch (duration) {
+    case BigInt(1):
+      ppy_discounted = ppy_discounted;
+    case BigInt(2):
+      ppy_discounted = ppy_discounted * BigInt(95) / BigInt(100);
+      break;
+    case BigInt(3):
+      ppy_discounted = ppy_discounted * BigInt(85) / BigInt(100);
+      break;
+    case BigInt(4):
+      ppy_discounted = ppy_discounted * BigInt(70) / BigInt(100);
+      break;
+    default:
+      ppy_discounted = ppy_discounted * BigInt(60) / BigInt(100);
+      break;
   }
-  console.log(chars, ppy_.toString(), result.toString());
-  return result;
+  console.log(chars, ppy_.toString(), ppy_discounted.toString());
+  return ppy_discounted * duration;
 }
 
 describe("PriceOracle", function () {
@@ -124,87 +132,98 @@ describe("PriceOracle", function () {
       });
     });
 
-    describe("dollarPriceForNamePerYear", function () {
-      it("Should return a correct price", async function () {
-        expect(await _oracle.dollarPriceForNamePerYear(["🐻‍❄️", "🫶"])).to.eq(
-          ppy(["🐻‍❄️", "🫶"])
-        );
-        expect(
-          await _oracle.dollarPriceForNamePerYear(["🐻‍❄️", "🫶", "🎃"])
-        ).to.eq(ppy(["🐻‍❄️", "🫶", "🎃"]));
-        expect(
-          await _oracle.dollarPriceForNamePerYear(["🫶", "🐻‍❄️", "🎃", "💩"])
-        ).to.eq(ppy(["🫶", "🐻‍❄️", "🎃", "💩"]));
-        expect(
-          await _oracle.dollarPriceForNamePerYear(["🐻‍❄️", "🫶", "🎃", "💩", "😮"])
-        ).to.eq(ppy(["🐻‍❄️", "🫶", "🎃", "💩", "😮"]));
-        expect(
-          await _oracle.dollarPriceForNamePerYear(["b", "e", "r", "a", "🐻‍❄️"])
-        ).to.eq(ppy(["b", "e", "r", "a", "🐻‍❄️"]));
-        expect(await _oracle.dollarPriceForNamePerYear(["o"])).to.eq(
-          ppy(["o"])
-        );
-      });
-
-      it("Should revert if single emoji", async function () {
-        await expect(
-          _oracle.dollarPriceForNamePerYear(["🐻"])
-        ).to.be.revertedWithCustomError(_oracle, "Nope");
-      });
-    });
-
     describe("price", function () {
       it("Should return correct price", async function () {
-        let asset = ethers.constants.AddressZero;
-        expect(await _oracle.price(["b", "e", "r", "a"], 1, asset)).to.eq(
+        // testing b
+        expect(await _oracle.price(["b"], 1)).to.eq(
+          ppy(["b"])
+        );
+        expect(await _oracle.price(["b"], 2)).to.eq(
+          price(["b"], BigInt(2))
+        );
+        expect(await _oracle.price(["b"], 3)).to.eq(
+          price(["b"], BigInt(3))
+        );
+        expect(await _oracle.price(["b"], 4)).to.eq(
+          price(["b"], BigInt(4))
+        );
+        expect(await _oracle.price(["b"], 5)).to.eq(
+          price(["b"], BigInt(5))
+        );
+        expect(await _oracle.price(["b"], 10)).to.eq(
+          price(["b"], BigInt(10))
+        );
+
+        // testing be
+        expect(await _oracle.price(["b", "e"], 1)).to.eq(
+          ppy(["b", "e"])
+        );
+        expect(await _oracle.price(["b", "e"], 2)).to.eq(
+          price(["b", "e"], BigInt(2))
+        );
+        expect(await _oracle.price(["b", "e"], 3)).to.eq(
+          price(["b", "e"], BigInt(3))
+        );
+        expect(await _oracle.price(["b", "e"], 4)).to.eq(
+          price(["b", "e"], BigInt(4))
+        );
+        expect(await _oracle.price(["b", "e"], 5)).to.eq(
+          price(["b", "e"], BigInt(5))
+        );
+        expect(await _oracle.price(["b", "e"], 10)).to.eq(
+          price(["b", "e"], BigInt(10))
+        );
+
+        // testing ber
+        expect(await _oracle.price(["b", "e", "r"], 1)).to.eq(
+          ppy(["b", "e", "r"])
+        );
+        expect(await _oracle.price(["b", "e", "r"], 2)).to.eq(
+          price(["b", "e", "r"], BigInt(2))
+        );
+        expect(await _oracle.price(["b", "e", "r"], 3)).to.eq(
+          price(["b", "e", "r"], BigInt(3))
+        );
+        expect(await _oracle.price(["b", "e", "r"], 4)).to.eq(
+          price(["b", "e", "r"], BigInt(4))
+        );
+        expect(await _oracle.price(["b", "e", "r"], 5)).to.eq(
+          price(["b", "e", "r"], BigInt(5))
+        );
+        expect(await _oracle.price(["b", "e", "r"], 10)).to.eq(
+          price(["b", "e", "r"], BigInt(10))
+        );
+
+        // testing bera
+        expect(await _oracle.price(["b", "e", "r", "a"], 1)).to.eq(
           ppy(["b", "e", "r", "a"])
         );
-        expect(await _oracle.price(["b", "e", "r", "a"], 3, asset)).to.eq(
+        expect(await _oracle.price(["b", "e", "r", "a"], 2)).to.eq(
+          price(["b", "e", "r", "a"], BigInt(2))
+        );
+        expect(await _oracle.price(["b", "e", "r", "a"], 3)).to.eq(
           price(["b", "e", "r", "a"], BigInt(3))
         );
-        expect(await _oracle.price(["b", "e", "r", "a"], 4, asset)).to.eq(
+        expect(await _oracle.price(["b", "e", "r", "a"], 4)).to.eq(
           price(["b", "e", "r", "a"], BigInt(4))
         );
-        expect(await _oracle.price(["b", "e", "r", "a"], 5, asset)).to.eq(
+        expect(await _oracle.price(["b", "e", "r", "a"], 5)).to.eq(
           price(["b", "e", "r", "a"], BigInt(5))
         );
-        expect(await _oracle.price(["b", "e", "r", "a"], 6, asset)).to.eq(
-          price(["b", "e", "r", "a"], BigInt(6))
-        );
-        expect(await _oracle.price(["b", "e", "r", "a"], 7, asset)).to.eq(
-          price(["b", "e", "r", "a"], BigInt(7))
-        );
-        expect(await _oracle.price(["b", "e", "r", "a"], 10, asset)).to.eq(
+        expect(await _oracle.price(["b", "e", "r", "a"], 10)).to.eq(
           price(["b", "e", "r", "a"], BigInt(10))
         );
-        expect(await _oracle.price(["b", "e", "r", "a"], 20, asset)).to.eq(
-          price(["b", "e", "r", "a"], BigInt(20))
-        );
-        expect(await _oracle.price(["🦆", "🐷"], 1, asset)).to.eq(
+        
+        // emojis
+        expect(await _oracle.price(["🦆", "🐷"], 1)).to.eq(
           ppy(["🦆", "🐷"])
         );
         expect(
-          await _oracle.price(["o", "o", "g", "a", "🦆", "🐷"], 8, asset)
+          await _oracle.price(["o", "o", "g", "a", "🦆", "🐷"], 8)
         ).to.eq(price(["o", "o", "g", "a", "🦆", "🐷"], BigInt(8)));
-      });
-    });
 
-    describe("setAssetOracle", function () {
-      it("Should set oracle address to priceFeed mapping", async function () {
-        let assetAddress = "0x5B38Da6a701c568545dCfcB03FcB875f56beddC4";
-        let oracleAddress = _oracle.address;
-        await _oracle.setAssetOracle(assetAddress, oracleAddress);
-
-        expect(await _oracle.priceFeeds(assetAddress)).to.eq(oracleAddress);
-      });
-      it("Should revert if caller is not an owner", async function () {
-        let assetAddress = "0x5B38Da6a701c568545dCfcB03FcB875f56beddC4";
-        let oracleAddress = _oracle.address;
-        await expect(
-          _oracle
-            .connect(_otherAccount)
-            .setAssetOracle(assetAddress, oracleAddress)
-        ).to.be.revertedWith("Ownable: caller is not the owner");
+        // revert single emoji
+        await expect(_oracle.price(["🦆"], 1)).to.be.revertedWithCustomError(_oracle, "Nope");
       });
     });
   });

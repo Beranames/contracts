@@ -51,12 +51,12 @@ const main = async () => {
     parseEther("100")
   );
 
-  await price.setAssetOracle(constants.AddressZero, aggregatorBERA.address);
-  await price.setAssetOracle(
-    "0x7EeCA4205fF31f947EdBd49195a7A88E6A91161B", // HONEY address
-    // or 0x0E4aaF1351de4c0264C5c7056Ef3777b41BD8e03 https://bartio.beratrail.io/token/0x0E4aaF1351de4c0264C5c7056Ef3777b41BD8e03?chainid=80084
-    aggregatorHONEY.address
-  );
+  // await price.setAssetOracle(constants.AddressZero, aggregatorBERA.address);
+  // await price.setAssetOracle(
+  //   "0x7EeCA4205fF31f947EdBd49195a7A88E6A91161B", // HONEY address
+  //   // or 0x0E4aaF1351de4c0264C5c7056Ef3777b41BD8e03 https://bartio.beratrail.io/token/0x0E4aaF1351de4c0264C5c7056Ef3777b41BD8e03?chainid=80084
+  //   aggregatorHONEY.address
+  // );
 };
 
 main()
