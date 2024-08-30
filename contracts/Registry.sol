@@ -161,10 +161,7 @@ contract BeranamesRegistry is Ownable2Step, Pausable, ERC721Enumerable {
             if (expiry > block.timestamp) {
                 remainder = (expiry - block.timestamp) / 365 days;
             }
-            uint price = priceOracle().price(
-                _chars,
-                duration + remainder
-            );
+            uint price = priceOracle().price(_chars, duration + remainder);
             if (remainder > 0) {
                 price -= priceOracle().price(_chars, remainder);
             }
@@ -264,10 +261,11 @@ contract BeranamesRegistry is Ownable2Step, Pausable, ERC721Enumerable {
             metadataURI: metadataURI
         });
         address owner = to == address(0) ? _msgSender() : to;
+        _safeMint(owner, id);
+        namesByWhois[owner].add(id);
         emit Mint(id, _chars, owner);
         emit UpdateWhois(id, whois);
         emit UpdateMetadataURI(id, metadataURI);
-        _safeMint(owner, id);
     }
 
     function renewInternal(
