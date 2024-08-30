@@ -61,15 +61,15 @@ const deployPriceOracle = async (): Promise<PriceOracle> => {
     (priceOracle as unknown as { address: string }).address
   );
 
-  const aggregatorBera = await deployMockAggregatorV3(
-    BigNumber.from(18),
-    parseEther("69.420")
-  );
+  // const aggregatorBera = await deployMockAggregatorV3(
+  //   BigNumber.from(18),
+  //   parseEther("69.420")
+  // );
 
-  const aggregatorHoney = await deployMockAggregatorV3(
-    BigNumber.from(18),
-    parseEther("100")
-  );
+  // const aggregatorHoney = await deployMockAggregatorV3(
+  //   BigNumber.from(18),
+  //   parseEther("100")
+  // );
 
   // await priceOracle.setAssetOracle(constants.AddressZero, aggregatorBera.address);
   // await priceOracle.setAssetOracle(HONEY_ADDRESS, aggregatorHoney.address);
@@ -121,6 +121,26 @@ const deployRegistry = async (
   return registry;
 };
 
+const mintToAuctionHouseWithRetry = async (registry: BeranamesRegistry, emojis: string[][]) => {
+  const retries = 20;
+  let delay = 1000;
+  for (let i = 0; i < retries; i++) {
+    try {
+      const mintTx = await registry.mintToAuctionHouse(emojis);
+      const mintRx = await mintTx.wait();
+      return mintRx;
+    } catch (e) {
+      if (i === retries - 1) {
+        throw e; // If it's the last retry, throw the error
+      }
+      console.log(`Gas estimation failed, retrying in ${delay}ms... (attempt ${i + 1}/${retries})`);
+      await new Promise(res => setTimeout(res, delay));
+      delay *= 2; // Exponential backoff
+
+    }
+  }
+}
+
 async function main() {
   const addressesProvider = await deployAddressesProvider();
   const price = await deployPriceOracle();
@@ -167,12 +187,14 @@ async function main() {
     const batch = emojiGenerator.next();
     if (batch.done) break;
     // mint to auction house
-    const mintTx = await registry.mintToAuctionHouse(
-      batch.value.reduce((a, b) => a.concat([[b]]), [] as Array<Array<string>>)
-    );
-    const mintRx = await mintTx.wait();
+    const emojis = batch.value.reduce((a, b) => a.concat([[b]]), [] as Array<Array<string>>)
+    console.log(`Minting ${emojis.length} emojis to auction house`);
+    const mintRx = await mintToAuctionHouseWithRetry(registry, emojis);
+    if (!mintRx) { throw new Error('Failed to mint emojis to auction house') }
+
     gasUsed = gasUsed.add(mintRx.gasUsed);
     emojiCount += batch.value.length;
+    console.log(`Minted ${emojis.length} emojis to auction house. Total minted: ${emojiCount}`);
   }
   console.log(`${emojiCount} emojis set and minted to auction house`);
   const unpauseTx = await registry.togglePause();

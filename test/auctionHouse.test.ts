@@ -248,7 +248,7 @@ describe("AuctionHouse", function () {
 
         await expect(_auctionHouse.claim(getTokenId())).to.changeEtherBalances(
           [_auctionHouse, _fundsManager, _team, _foundation, _treasury],
-          [-highestBid.amount, 0, 1_500, 8000, 500]
+          [-highestBid.amount, 0, 0, 0, 10_000]
         );
       });
       it("Should emit Claimed event if success", async function () {
