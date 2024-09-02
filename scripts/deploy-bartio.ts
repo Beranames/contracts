@@ -180,6 +180,14 @@ async function main() {
   const setAddressesRx = await setAddresses.wait();
   gasUsed = gasUsed.add(setAddressesRx.gasUsed);
 
+  // mark single emojis as emojis
+  const firstEmojiGenerator = getEmojiBatch();
+  while (true) {
+    const batch = firstEmojiGenerator.next();
+    if (batch.done) break;
+    await price.setEmojis(batch.value);
+  }
+
   // mint singles to auction house
   const emojiGenerator = getEmojiBatch();
   let emojiCount = 0;
