@@ -26,9 +26,10 @@ contract BeranamesRegistry is Ownable2Step, Pausable, ERC721Enumerable {
         uint256 expiry; // time elapsed from 1970
         address whois; // owner
         string metadataURI; // ipfs://something
+        uint256 minted_at; // time elapsed from 1970
     }
 
-    event Mint(uint256 indexed id, string[] chars, address indexed to);
+    event Mint(uint256 indexed id, string[] chars, address indexed to, uint256 expiry, string metadataURI);
     event UpdateWhois(uint256 indexed id, address aka);
     event UpdateMetadataURI(uint256 indexed id, string metadataURI);
 
@@ -253,17 +254,19 @@ contract BeranamesRegistry is Ownable2Step, Pausable, ERC721Enumerable {
         } else {
             minted[name] = true;
         }
+        uint256 expiry = block.timestamp + duration * 365 days;
         names[id] = Name({
             name: name,
             chars: _chars,
-            expiry: block.timestamp + duration * 365 days,
+            expiry: expiry,
             whois: whois,
-            metadataURI: metadataURI
+            metadataURI: metadataURI,
+            minted_at: block.timestamp
         });
         address owner = to == address(0) ? _msgSender() : to;
         _safeMint(owner, id);
         namesByWhois[owner].add(id);
-        emit Mint(id, _chars, owner);
+        emit Mint(id, _chars, owner, expiry, metadataURI); // TODO: add expiry & metadataUri
         emit UpdateWhois(id, whois);
         emit UpdateMetadataURI(id, metadataURI);
     }
